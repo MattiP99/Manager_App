@@ -2,25 +2,37 @@ import { useEffect } from 'react';
 import { Slot, useRouter, useSegments } from 'expo-router';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { useSession } from '../features/auth/useSession';
+import { useHousehold } from '../features/household/useHousehold';
 
 const queryClient = new QueryClient();
 
 function AuthGate() {
-  const { session, isLoading } = useSession();
+  const { session, isLoading: sessionLoading } = useSession();
+  const { data: household, isLoading: householdLoading } = useHousehold();
   const segments = useSegments();
   const router = useRouter();
 
   useEffect(() => {
-    if (isLoading) return;
+    if (sessionLoading) return;
 
     const inAuthGroup = segments[0] === 'login' || segments[0] === 'signup';
 
     if (!session && !inAuthGroup) {
       router.replace('/login');
-    } else if (session && inAuthGroup) {
+      return;
+    }
+    if (session && inAuthGroup) {
+      router.replace('/');
+      return;
+    }
+    if (session && !householdLoading && !household && segments[0] !== 'join-household') {
+      router.replace('/join-household');
+      return;
+    }
+    if (session && household && segments[0] === 'join-household') {
       router.replace('/');
     }
-  }, [session, isLoading, segments]);
+  }, [session, sessionLoading, household, householdLoading, segments]);
 
   return <Slot />;
 }
