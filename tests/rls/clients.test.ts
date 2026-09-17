@@ -37,19 +37,21 @@ describe('clients/work_sessions/payments RLS isolation', () => {
       .single();
     expect(clientError).toBeNull();
 
-    await clientA.from('work_sessions').insert({
+    const { error: sessionSetupError } = await clientA.from('work_sessions').insert({
       household_id: householdA.id,
       client_id: newClient.id,
       date: '2026-09-01',
       hours: 3,
       rate_snapshot: 12,
     });
-    await clientA.from('payments').insert({
+    expect(sessionSetupError).toBeNull();
+    const { error: paymentSetupError } = await clientA.from('payments').insert({
       household_id: householdA.id,
       client_id: newClient.id,
       date: '2026-09-05',
       amount: 20,
     });
+    expect(paymentSetupError).toBeNull();
 
     const clientB = await signInAs(userBEmail, password);
     const { data: visibleClients } = await clientB.from('clients').select('*').eq('household_id', householdA.id);
@@ -74,6 +76,13 @@ describe('clients/work_sessions/payments RLS isolation', () => {
     });
     createdHouseholdIds.push(householdA.id);
 
+    const { data: realClient, error: realClientError } = await clientA
+      .from('clients')
+      .insert({ household_id: householdA.id, name: 'Real Client', hourly_rate: 10 })
+      .select()
+      .single();
+    expect(realClientError).toBeNull();
+
     const clientB = await signInAs(userBEmail, password);
 
     const insertClient = await clientB
@@ -81,9 +90,11 @@ describe('clients/work_sessions/payments RLS isolation', () => {
       .insert({ household_id: householdA.id, name: 'Sneaky', hourly_rate: 10 });
     expect(insertClient.error).not.toBeNull();
 
+    // Uses a real client_id (belonging to household A) so a denial here can
+    // only be RLS blocking the cross-household write, not an FK violation.
     const insertSession = await clientB.from('work_sessions').insert({
       household_id: householdA.id,
-      client_id: '00000000-0000-0000-0000-000000000000',
+      client_id: realClient.id,
       date: '2026-09-01',
       hours: 1,
       rate_snapshot: 10,
@@ -92,7 +103,7 @@ describe('clients/work_sessions/payments RLS isolation', () => {
 
     const insertPayment = await clientB
       .from('payments')
-      .insert({ household_id: householdA.id, client_id: '00000000-0000-0000-0000-000000000000', date: '2026-09-01', amount: 10 });
+      .insert({ household_id: householdA.id, client_id: realClient.id, date: '2026-09-01', amount: 10 });
     expect(insertPayment.error).not.toBeNull();
   });
 
