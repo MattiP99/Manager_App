@@ -1,9 +1,12 @@
-import { View, Text, Pressable, StyleSheet } from 'react-native';
+import { View, Text, Pressable, StyleSheet, FlatList } from 'react-native';
+import { router } from 'expo-router';
 import { supabase } from '../../lib/supabase';
 import { useHousehold } from '../../features/household/useHousehold';
+import { useClients } from '../../features/clients/useClients';
 
 export default function ImpostazioniScreen() {
   const { data: household, isLoading } = useHousehold();
+  const { data: clients } = useClients();
 
   if (isLoading) return <Text style={styles.padded}>Caricamento...</Text>;
 
@@ -12,6 +15,28 @@ export default function ImpostazioniScreen() {
       <Text style={styles.title}>{household?.name}</Text>
       <Text>Codice invito per far entrare un altro membro:</Text>
       <Text style={styles.code}>{household?.invite_code}</Text>
+
+      <View style={styles.sectionHeader}>
+        <Text style={styles.sectionTitle}>Clienti</Text>
+        <Pressable style={styles.addButton} onPress={() => router.push('/add-client')}>
+          <Text style={styles.addButtonText}>+ Cliente</Text>
+        </Pressable>
+      </View>
+      <FlatList
+        data={clients ?? []}
+        keyExtractor={(c) => c.id}
+        renderItem={({ item }) => (
+          <Pressable
+            style={styles.clientRow}
+            onPress={() => router.push({ pathname: '/edit-client', params: { id: item.id } })}
+          >
+            <Text style={styles.clientName}>{item.name}{!item.active ? ' (disattivo)' : ''}</Text>
+            <Text>€{item.hourly_rate}/h</Text>
+          </Pressable>
+        )}
+        ListEmptyComponent={<Text>Nessun cliente ancora.</Text>}
+      />
+
       <Pressable style={styles.button} onPress={() => supabase.auth.signOut()}>
         <Text style={styles.buttonText}>Esci</Text>
       </Pressable>
@@ -24,6 +49,18 @@ const styles = StyleSheet.create({
   padded: { padding: 24 },
   title: { fontSize: 22, fontWeight: '600' },
   code: { fontSize: 28, fontWeight: '700', letterSpacing: 4 },
+  sectionHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 16 },
+  sectionTitle: { fontSize: 18, fontWeight: '600' },
+  addButton: { backgroundColor: '#2563eb', borderRadius: 8, paddingVertical: 6, paddingHorizontal: 12 },
+  addButtonText: { color: 'white', fontWeight: '600' },
+  clientRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    paddingVertical: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: '#eee',
+  },
+  clientName: { fontWeight: '500' },
   button: { backgroundColor: '#dc2626', borderRadius: 8, padding: 14, alignItems: 'center', marginTop: 24 },
   buttonText: { color: 'white', fontWeight: '600' },
 });
