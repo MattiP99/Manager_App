@@ -181,5 +181,90 @@ describe('clients/work_sessions/payments RLS isolation', () => {
 
     expect(statusAfterFull!.find((s) => s.id === day1.id)!.status).toBe('paid');
     expect(statusAfterFull!.find((s) => s.id === day2.id)!.status).toBe('paid');
+
+    // Overpayment: a payment larger than total remaining due should mark
+    // every session 'paid', not error or leave anything unpaid.
+    await clientA.from('payments').insert({ household_id: household.id, client_id: client.id, date: '2026-09-10', amount: 1000 });
+
+    const { data: statusAfterOverpayment } = await clientA
+      .from('work_session_status')
+      .select('id, status')
+      .eq('client_id', client.id)
+      .order('date', { ascending: true });
+
+    expect(statusAfterOverpayment!.every((s) => s.status === 'paid')).toBe(true);
+  });
+
+  it('a payment for one client does not affect work_session_status for another client', async () => {
+    const clientA = await signInAs(userAEmail, password);
+    const { data: household } = await clientA.rpc('create_household', {
+      p_name: 'Household A Cross-Client Isolation Test',
+    });
+    createdHouseholdIds.push(household.id);
+
+    const { data: clientX } = await clientA
+      .from('clients')
+      .insert({ household_id: household.id, name: 'Client X', hourly_rate: 10 })
+      .select()
+      .single();
+    const { data: clientY } = await clientA
+      .from('clients')
+      .insert({ household_id: household.id, name: 'Client Y', hourly_rate: 10 })
+      .select()
+      .single();
+
+    const { data: sessionX } = await clientA
+      .from('work_sessions')
+      .insert({ household_id: household.id, client_id: clientX.id, date: '2026-09-01', hours: 2, rate_snapshot: 10 })
+      .select()
+      .single();
+    const { data: sessionY } = await clientA
+      .from('work_sessions')
+      .insert({ household_id: household.id, client_id: clientY.id, date: '2026-09-01', hours: 2, rate_snapshot: 10 })
+      .select()
+      .single();
+
+    // Fully pay client X only.
+    await clientA.from('payments').insert({ household_id: household.id, client_id: clientX.id, date: '2026-09-02', amount: 20 });
+
+    const { data: statusX } = await clientA
+      .from('work_session_status')
+      .select('id, status')
+      .eq('client_id', clientX.id);
+    const { data: statusY } = await clientA
+      .from('work_session_status')
+      .select('id, status')
+      .eq('client_id', clientY.id);
+
+    expect(statusX!.find((s) => s.id === sessionX.id)!.status).toBe('paid');
+    expect(statusY!.find((s) => s.id === sessionY.id)!.status).toBe('unpaid');
+  });
+
+  it('a cross-household UPDATE or DELETE on a client is silently denied (no rows matched, owner data unchanged)', async () => {
+    const clientA = await signInAs(userAEmail, password);
+    const { data: household } = await clientA.rpc('create_household', {
+      p_name: 'Household A Write-Denial Test',
+    });
+    createdHouseholdIds.push(household.id);
+
+    const { data: ownedClient } = await clientA
+      .from('clients')
+      .insert({ household_id: household.id, name: 'Owned Client', hourly_rate: 12 })
+      .select()
+      .single();
+
+    const clientB = await signInAs(userBEmail, password);
+
+    // Cross-household UPDATE matches zero rows under RLS — no error, but
+    // also no effect. Confirm the owner still sees the original value.
+    await clientB.from('clients').update({ hourly_rate: 999 }).eq('id', ownedClient.id);
+    const { data: afterUpdateAttempt } = await clientA.from('clients').select('hourly_rate').eq('id', ownedClient.id).single();
+    expect(afterUpdateAttempt!.hourly_rate).toBe(12);
+
+    // Cross-household DELETE likewise matches zero rows — the row must
+    // still be present when the owner reads it back.
+    await clientB.from('clients').delete().eq('id', ownedClient.id);
+    const { data: afterDeleteAttempt } = await clientA.from('clients').select('id').eq('id', ownedClient.id).single();
+    expect(afterDeleteAttempt!.id).toBe(ownedClient.id);
   });
 });

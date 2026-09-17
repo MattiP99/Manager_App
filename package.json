@@ -45,6 +45,7 @@
     "ios": "expo start --ios",
     "web": "expo start --web",
     "lint": "expo lint",
+    "test": "jest --testPathIgnorePatterns=/tests/rls/",
     "test:rls": "jest tests/rls --runInBand"
   },
   "private": true,
