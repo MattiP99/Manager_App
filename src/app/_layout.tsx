@@ -25,7 +25,7 @@ function AuthGate() {
       router.replace('/');
       return;
     }
-    if (session && !householdLoading && !household && segments[0] !== 'join-household') {
+    if (session && household === null && segments[0] !== 'join-household') {
       router.replace('/join-household');
       return;
     }

@@ -16,14 +16,16 @@ export function useHousehold() {
     queryKey: ['household', userId],
     enabled: !!userId,
     queryFn: async (): Promise<Household | null> => {
+      if (!userId) return null;
       const { data, error } = await supabase
         .from('household_members')
         .select('households(id, name, invite_code)')
         .eq('user_id', userId)
+        .order('created_at', { ascending: true })
         .limit(1)
         .maybeSingle();
       if (error) throw error;
-      return (data?.households as unknown as Household) ?? null;
+      return data?.households ?? null;
     },
   });
 }
@@ -34,7 +36,7 @@ export function useCreateHousehold() {
     mutationFn: async (name: string) => {
       const { data, error } = await supabase.rpc('create_household', { p_name: name });
       if (error) throw error;
-      return data as Household;
+      return data;
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['household'] }),
   });
@@ -46,7 +48,7 @@ export function useJoinHousehold() {
     mutationFn: async (code: string) => {
       const { data, error } = await supabase.rpc('join_household', { p_code: code });
       if (error) throw error;
-      return data as Household;
+      return data;
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['household'] }),
   });
