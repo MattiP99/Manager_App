@@ -41,19 +41,20 @@ export default function PagamentiScreen() {
       </View>
 
       <View style={styles.grandTotal}>
-        <Text>Ore totali: {grandTotal.totalHours}</Text>
+        <Text>Ore totali: {grandTotal.totalHours.toFixed(2)}</Text>
         <Text>Dovuto: €{grandTotal.totalDue.toFixed(2)}</Text>
         <Text>Ricevuto: €{grandTotal.totalPaid.toFixed(2)}</Text>
         <Text style={styles.balanceText}>Saldo: €{grandTotal.balance.toFixed(2)}</Text>
       </View>
 
       <FlatList
+        style={{ flex: 1 }}
         data={rows}
         keyExtractor={(r) => r.client.id}
         renderItem={({ item }) => (
           <Pressable style={styles.row} onPress={() => router.push(`/client/${item.client.id}`)}>
             <Text style={styles.clientName}>{item.client.name}</Text>
-            <Text>{item.summary.totalHours}h — dovuto €{item.summary.totalDue.toFixed(2)} — ricevuto €{item.summary.totalPaid.toFixed(2)}</Text>
+            <Text>{item.summary.totalHours.toFixed(2)}h — dovuto €{item.summary.totalDue.toFixed(2)} — ricevuto €{item.summary.totalPaid.toFixed(2)}</Text>
             <Text style={item.summary.balance > 0 ? styles.due : styles.settled}>
               Saldo: €{item.summary.balance.toFixed(2)}
             </Text>

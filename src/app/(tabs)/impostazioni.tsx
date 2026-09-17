@@ -22,20 +22,23 @@ export default function ImpostazioniScreen() {
           <Text style={styles.addButtonText}>+ Cliente</Text>
         </Pressable>
       </View>
-      <FlatList
-        data={clients ?? []}
-        keyExtractor={(c) => c.id}
-        renderItem={({ item }) => (
-          <Pressable
-            style={styles.clientRow}
-            onPress={() => router.push({ pathname: '/edit-client', params: { id: item.id } })}
-          >
-            <Text style={styles.clientName}>{item.name}{!item.active ? ' (disattivo)' : ''}</Text>
-            <Text>€{item.hourly_rate}/h</Text>
-          </Pressable>
-        )}
-        ListEmptyComponent={<Text>Nessun cliente ancora.</Text>}
-      />
+      <View style={styles.listWrapper}>
+        <FlatList
+          style={{ flex: 1 }}
+          data={clients ?? []}
+          keyExtractor={(c) => c.id}
+          renderItem={({ item }) => (
+            <Pressable
+              style={styles.clientRow}
+              onPress={() => router.push({ pathname: '/edit-client', params: { id: item.id } })}
+            >
+              <Text style={styles.clientName}>{item.name}{!item.active ? ' (disattivo)' : ''}</Text>
+              <Text>€{item.hourly_rate}/h</Text>
+            </Pressable>
+          )}
+          ListEmptyComponent={<Text>Nessun cliente ancora.</Text>}
+        />
+      </View>
 
       <Pressable style={styles.button} onPress={() => supabase.auth.signOut()}>
         <Text style={styles.buttonText}>Esci</Text>
@@ -51,6 +54,7 @@ const styles = StyleSheet.create({
   code: { fontSize: 28, fontWeight: '700', letterSpacing: 4 },
   sectionHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 16 },
   sectionTitle: { fontSize: 18, fontWeight: '600' },
+  listWrapper: { flex: 1 },
   addButton: { backgroundColor: '#2563eb', borderRadius: 8, paddingVertical: 6, paddingHorizontal: 12 },
   addButtonText: { color: 'white', fontWeight: '600' },
   clientRow: {

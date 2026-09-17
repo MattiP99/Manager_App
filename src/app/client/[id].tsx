@@ -6,12 +6,13 @@ import { usePaymentsByClient } from '../../features/payments/usePayments';
 
 export default function ClientDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
-  const { data: clients } = useClients();
+  const { data: clients, isLoading } = useClients();
   const client = clients?.find((c) => c.id === id);
   const { data: sessions } = useWorkSessionsByClient(id);
   const { data: payments } = usePaymentsByClient(id);
 
-  if (!client) return <Text style={styles.padded}>Caricamento...</Text>;
+  if (isLoading) return <Text style={styles.padded}>Caricamento...</Text>;
+  if (!client) return <Text style={styles.padded}>Cliente non trovato.</Text>;
 
   const totalDue = (sessions ?? []).reduce((sum, s) => sum + s.amount_due, 0);
   const totalPaid = (payments ?? []).reduce((sum, p) => sum + p.amount, 0);
@@ -41,31 +42,37 @@ export default function ClientDetailScreen() {
         </Pressable>
       </View>
 
-      <Text style={styles.sectionTitle}>Giornate lavorate</Text>
-      <FlatList
-        data={sessions ?? []}
-        keyExtractor={(s) => s.id}
-        renderItem={({ item }) => (
-          <View style={[styles.row, { backgroundColor: item.status === 'paid' ? '#dcfce7' : '#fee2e2' }]}>
-            <Text>{item.date} — {item.hours}h</Text>
-            <Text>€{item.amount_due.toFixed(2)}</Text>
-          </View>
-        )}
-        ListEmptyComponent={<Text>Nessuna giornata registrata.</Text>}
-      />
+      <View style={styles.listSection}>
+        <Text style={styles.sectionTitle}>Giornate lavorate</Text>
+        <FlatList
+          style={{ flex: 1 }}
+          data={sessions ?? []}
+          keyExtractor={(s) => s.id}
+          renderItem={({ item }) => (
+            <View style={[styles.row, { backgroundColor: item.status === 'paid' ? '#dcfce7' : '#fee2e2' }]}>
+              <Text>{item.date} — {item.hours}h</Text>
+              <Text>€{item.amount_due.toFixed(2)}</Text>
+            </View>
+          )}
+          ListEmptyComponent={<Text>Nessuna giornata registrata.</Text>}
+        />
+      </View>
 
-      <Text style={styles.sectionTitle}>Pagamenti ricevuti</Text>
-      <FlatList
-        data={payments ?? []}
-        keyExtractor={(p) => p.id}
-        renderItem={({ item }) => (
-          <View style={styles.row}>
-            <Text>{item.date}</Text>
-            <Text>€{item.amount.toFixed(2)}</Text>
-          </View>
-        )}
-        ListEmptyComponent={<Text>Nessun pagamento registrato.</Text>}
-      />
+      <View style={styles.listSection}>
+        <Text style={styles.sectionTitle}>Pagamenti ricevuti</Text>
+        <FlatList
+          style={{ flex: 1 }}
+          data={payments ?? []}
+          keyExtractor={(p) => p.id}
+          renderItem={({ item }) => (
+            <View style={styles.row}>
+              <Text>{item.date}</Text>
+              <Text>€{item.amount.toFixed(2)}</Text>
+            </View>
+          )}
+          ListEmptyComponent={<Text>Nessun pagamento registrato.</Text>}
+        />
+      </View>
     </View>
   );
 }
@@ -80,5 +87,6 @@ const styles = StyleSheet.create({
   actionButton: { flex: 1, backgroundColor: '#2563eb', borderRadius: 8, padding: 12, alignItems: 'center' },
   actionButtonText: { color: 'white', fontWeight: '600' },
   sectionTitle: { fontSize: 16, fontWeight: '600', marginTop: 12 },
+  listSection: { flex: 1 },
   row: { flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 8, paddingHorizontal: 8, borderRadius: 6, marginTop: 4 },
 });
