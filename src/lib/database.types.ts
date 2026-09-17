@@ -39,6 +39,41 @@ export type Database = {
   }
   public: {
     Tables: {
+      clients: {
+        Row: {
+          active: boolean
+          created_at: string
+          hourly_rate: number
+          household_id: string
+          id: string
+          name: string
+        }
+        Insert: {
+          active?: boolean
+          created_at?: string
+          hourly_rate: number
+          household_id: string
+          id?: string
+          name: string
+        }
+        Update: {
+          active?: boolean
+          created_at?: string
+          hourly_rate?: number
+          household_id?: string
+          id?: string
+          name?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "clients_household_id_fkey"
+            columns: ["household_id"]
+            isOneToOne: false
+            referencedRelation: "households"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       household_members: {
         Row: {
           created_at: string
@@ -86,9 +121,136 @@ export type Database = {
         }
         Relationships: []
       }
+      payments: {
+        Row: {
+          amount: number
+          client_id: string
+          created_at: string
+          date: string
+          household_id: string
+          id: string
+          note: string | null
+        }
+        Insert: {
+          amount: number
+          client_id: string
+          created_at?: string
+          date: string
+          household_id: string
+          id?: string
+          note?: string | null
+        }
+        Update: {
+          amount?: number
+          client_id?: string
+          created_at?: string
+          date?: string
+          household_id?: string
+          id?: string
+          note?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payments_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payments_household_id_fkey"
+            columns: ["household_id"]
+            isOneToOne: false
+            referencedRelation: "households"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      work_sessions: {
+        Row: {
+          amount_due: number | null
+          client_id: string
+          created_at: string
+          date: string
+          hours: number
+          household_id: string
+          id: string
+          note: string | null
+          rate_snapshot: number
+        }
+        Insert: {
+          amount_due?: number | null
+          client_id: string
+          created_at?: string
+          date: string
+          hours: number
+          household_id: string
+          id?: string
+          note?: string | null
+          rate_snapshot: number
+        }
+        Update: {
+          amount_due?: number | null
+          client_id?: string
+          created_at?: string
+          date?: string
+          hours?: number
+          household_id?: string
+          id?: string
+          note?: string | null
+          rate_snapshot?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "work_sessions_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "work_sessions_household_id_fkey"
+            columns: ["household_id"]
+            isOneToOne: false
+            referencedRelation: "households"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
-      [_ in never]: never
+      work_session_status: {
+        Row: {
+          amount_due: number | null
+          client_id: string | null
+          created_at: string | null
+          cumulative_due: number | null
+          date: string | null
+          hours: number | null
+          household_id: string | null
+          id: string | null
+          note: string | null
+          rate_snapshot: number | null
+          status: string | null
+          total_paid: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "work_sessions_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "work_sessions_household_id_fkey"
+            columns: ["household_id"]
+            isOneToOne: false
+            referencedRelation: "households"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Functions: {
       create_household: {
