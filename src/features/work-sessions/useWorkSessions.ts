@@ -25,7 +25,8 @@ export function useWorkSessionsByClient(clientId: string | undefined) {
         .from('work_session_status')
         .select('id, client_id, date, hours, rate_snapshot, amount_due, note, status')
         .eq('client_id', clientId!)
-        .order('date', { ascending: false });
+        .order('date', { ascending: false })
+        .order('created_at', { ascending: false });
       if (error) throw error;
       return data as WorkSessionStatus[];
     },
@@ -44,7 +45,8 @@ export function useAllWorkSessions() {
         .from('work_sessions')
         .select('id, client_id, date, hours, rate_snapshot, amount_due, note')
         .eq('household_id', householdId!)
-        .order('date', { ascending: false });
+        .order('date', { ascending: false })
+        .order('created_at', { ascending: false });
       if (error) throw error;
       return data as WorkSession[];
     },

@@ -21,7 +21,8 @@ export function useClients() {
         .from('clients')
         .select('id, name, hourly_rate, active')
         .eq('household_id', householdId!)
-        .order('name', { ascending: true });
+        .order('name', { ascending: true })
+        .order('id', { ascending: true });
       if (error) throw error;
       return data;
     },

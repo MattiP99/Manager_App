@@ -19,7 +19,8 @@ export function usePaymentsByClient(clientId: string | undefined) {
         .from('payments')
         .select('id, client_id, date, amount, note')
         .eq('client_id', clientId!)
-        .order('date', { ascending: false });
+        .order('date', { ascending: false })
+        .order('created_at', { ascending: false });
       if (error) throw error;
       return data;
     },
@@ -38,7 +39,8 @@ export function useAllPayments() {
         .from('payments')
         .select('id, client_id, date, amount, note')
         .eq('household_id', householdId!)
-        .order('date', { ascending: false });
+        .order('date', { ascending: false })
+        .order('created_at', { ascending: false });
       if (error) throw error;
       return data;
     },

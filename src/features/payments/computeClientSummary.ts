@@ -17,17 +17,24 @@ export function computeClientSummary(sessions: WorkSession[], payments: Payment[
 
 export type Period = 'week' | 'month' | 'all';
 
+export function toLocalDateString(date: Date): string {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
+
 export function dateRangeForPeriod(period: Period, now = new Date()): { start: string; end: string } | null {
   if (period === 'all') return null;
 
-  const end = now.toISOString().slice(0, 10);
+  const end = toLocalDateString(now);
   const start = new Date(now);
   if (period === 'week') {
     start.setDate(start.getDate() - 7);
   } else {
-    start.setMonth(start.getMonth() - 1);
+    start.setDate(start.getDate() - 30);
   }
-  return { start: start.toISOString().slice(0, 10), end };
+  return { start: toLocalDateString(start), end };
 }
 
 export function filterByDateRange<T extends { date: string }>(items: T[], range: { start: string; end: string } | null): T[] {

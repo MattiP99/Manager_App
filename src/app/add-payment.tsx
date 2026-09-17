@@ -2,10 +2,11 @@ import { useState } from 'react';
 import { View, TextInput, Text, Pressable, StyleSheet } from 'react-native';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useCreatePayment } from '../features/payments/usePayments';
+import { toLocalDateString } from '../features/payments/computeClientSummary';
 
 export default function AddPaymentScreen() {
   const { clientId } = useLocalSearchParams<{ clientId: string }>();
-  const [date, setDate] = useState(new Date().toISOString().slice(0, 10));
+  const [date, setDate] = useState(toLocalDateString(new Date()));
   const [amount, setAmount] = useState('');
   const [note, setNote] = useState('');
   const createPayment = useCreatePayment();
@@ -18,6 +19,8 @@ export default function AddPaymentScreen() {
       { onSuccess: () => router.back() }
     );
   };
+
+  if (!clientId) return <Text>Cliente non specificato.</Text>;
 
   return (
     <View style={styles.container}>
