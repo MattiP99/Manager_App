@@ -53,6 +53,26 @@ export function useAllWorkSessions() {
   });
 }
 
+export function useAllWorkSessionsStatus() {
+  const { data: household } = useHousehold();
+  const householdId = household?.id;
+
+  return useQuery({
+    queryKey: ['work-session-status-all', householdId],
+    enabled: !!householdId,
+    queryFn: async (): Promise<WorkSessionStatus[]> => {
+      const { data, error } = await supabase
+        .from('work_session_status')
+        .select('id, client_id, date, hours, rate_snapshot, amount_due, note, status')
+        .eq('household_id', householdId!)
+        .order('date', { ascending: false })
+        .order('created_at', { ascending: false });
+      if (error) throw error;
+      return data as WorkSessionStatus[];
+    },
+  });
+}
+
 export function useCreateWorkSession() {
   const { data: household } = useHousehold();
   const queryClient = useQueryClient();
@@ -88,6 +108,7 @@ export function useCreateWorkSession() {
     },
     onSuccess: (_data, variables) => {
       queryClient.invalidateQueries({ queryKey: ['work-session-status', variables.clientId] });
+      queryClient.invalidateQueries({ queryKey: ['work-session-status-all'] });
       queryClient.invalidateQueries({ queryKey: ['work-sessions'] });
     },
   });

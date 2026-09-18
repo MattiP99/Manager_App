@@ -75,6 +75,7 @@ export function useCreatePayment() {
       queryClient.invalidateQueries({ queryKey: ['payments', variables.clientId] });
       queryClient.invalidateQueries({ queryKey: ['payments-all'] });
       queryClient.invalidateQueries({ queryKey: ['work-session-status', variables.clientId] });
+      queryClient.invalidateQueries({ queryKey: ['work-session-status-all'] });
     },
   });
 }
