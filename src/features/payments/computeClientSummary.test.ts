@@ -1,4 +1,4 @@
-import { computeClientSummary, dateRangeForPeriod, filterByDateRange, toLocalDateString } from './computeClientSummary';
+import { computeClientSummary, dateRangeForPeriod, filterByDateRange } from './computeClientSummary';
 import type { WorkSession } from '../work-sessions/useWorkSessions';
 import type { Payment } from './usePayments';
 
@@ -49,35 +49,6 @@ describe('computeClientSummary', () => {
   });
 });
 
-describe('toLocalDateString', () => {
-  const originalTZ = process.env.TZ;
-
-  beforeAll(() => {
-    // Rome: UTC+1 in March (DST starts later in the month), so a local
-    // time just after midnight is still the previous day in UTC. This is
-    // exactly the window where the old `.toISOString().slice(0,10)` bug bit.
-    process.env.TZ = 'Europe/Rome';
-  });
-
-  afterAll(() => {
-    process.env.TZ = originalTZ;
-  });
-
-  it('returns the local calendar day, not the UTC day, just after local midnight', () => {
-    const localMidnightish = new Date(2027, 2, 15, 0, 30); // 2027-03-15 00:30 local (Rome)
-
-    // The old buggy approach would report the previous UTC day here.
-    expect(localMidnightish.toISOString().slice(0, 10)).toBe('2027-03-14');
-
-    // The fixed helper must report the correct local day.
-    expect(toLocalDateString(localMidnightish)).toBe('2027-03-15');
-  });
-
-  it('formats a plain midday date as YYYY-MM-DD', () => {
-    expect(toLocalDateString(new Date(2026, 0, 5, 13, 0))).toBe('2026-01-05');
-  });
-});
-
 describe('dateRangeForPeriod', () => {
   it("returns null for 'all' (pass-through)", () => {
     expect(dateRangeForPeriod('all')).toBeNull();
@@ -93,10 +64,6 @@ describe('dateRangeForPeriod', () => {
     expect(dateRangeForPeriod('month', now)).toEqual({ start: '2026-08-19', end: '2026-09-18' });
   });
 
-  // Month-end dates from the original bug report: setMonth()-based "minus a
-  // month" used to overflow through non-existent days (e.g. "Feb 31") and
-  // roll forward, silently dropping days. The 30-day rolling window must not
-  // do that for any of these.
   it.each([
     ['2027-03-31', '2027-03-01'],
     ['2027-03-29', '2027-02-27'],

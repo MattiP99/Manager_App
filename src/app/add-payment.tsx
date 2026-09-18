@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { View, TextInput, Text, Pressable, StyleSheet } from 'react-native';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useCreatePayment } from '../features/payments/usePayments';
-import { toLocalDateString } from '../features/payments/computeClientSummary';
+import { toLocalDateString } from '../lib/dates';
 
 export default function AddPaymentScreen() {
   const { clientId } = useLocalSearchParams<{ clientId: string }>();

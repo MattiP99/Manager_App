@@ -3,7 +3,7 @@ import { View, TextInput, Text, Pressable, StyleSheet, ScrollView } from 'react-
 import { router, useLocalSearchParams } from 'expo-router';
 import { useClients } from '../features/clients/useClients';
 import { useCreateWorkSession } from '../features/work-sessions/useWorkSessions';
-import { toLocalDateString } from '../features/payments/computeClientSummary';
+import { toLocalDateString } from '../lib/dates';
 
 export default function AddWorkSessionScreen() {
   const { clientId: preselectedClientId } = useLocalSearchParams<{ clientId?: string }>();

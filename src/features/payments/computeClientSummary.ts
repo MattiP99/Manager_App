@@ -1,3 +1,4 @@
+import { toLocalDateString } from '../../lib/dates';
 import type { WorkSession } from '../work-sessions/useWorkSessions';
 import type { Payment } from './usePayments';
 
@@ -16,13 +17,6 @@ export function computeClientSummary(sessions: WorkSession[], payments: Payment[
 }
 
 export type Period = 'week' | 'month' | 'all';
-
-export function toLocalDateString(date: Date): string {
-  const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, '0');
-  const day = String(date.getDate()).padStart(2, '0');
-  return `${year}-${month}-${day}`;
-}
 
 export function dateRangeForPeriod(period: Period, now = new Date()): { start: string; end: string } | null {
   if (period === 'all') return null;
