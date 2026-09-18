@@ -6,10 +6,10 @@ import { useCreateWorkSession } from '../features/work-sessions/useWorkSessions'
 import { toLocalDateString } from '../lib/dates';
 
 export default function AddWorkSessionScreen() {
-  const { clientId: preselectedClientId } = useLocalSearchParams<{ clientId?: string }>();
+  const { clientId: preselectedClientId, date: preselectedDate } = useLocalSearchParams<{ clientId?: string; date?: string }>();
   const { data: clients } = useClients();
   const [clientId, setClientId] = useState(preselectedClientId ?? '');
-  const [date, setDate] = useState(toLocalDateString(new Date()));
+  const [date, setDate] = useState(preselectedDate ?? toLocalDateString(new Date()));
   const [hours, setHours] = useState('');
   const [note, setNote] = useState('');
   const createSession = useCreateWorkSession();
