@@ -3,10 +3,14 @@ import { router } from 'expo-router';
 import { supabase } from '../../lib/supabase';
 import { useHousehold } from '../../features/household/useHousehold';
 import { useClients } from '../../features/clients/useClients';
+import { useRecurringTemplates } from '../../features/family-calendar/useRecurringTemplates';
+import { WEEKDAY_OPTIONS } from '../../features/family-calendar/constants';
 
 export default function ImpostazioniScreen() {
   const { data: household, isLoading } = useHousehold();
   const { data: clients } = useClients();
+  const { data: recurringTemplates } = useRecurringTemplates();
+  const weekdayLabel = (weekday: number) => WEEKDAY_OPTIONS.find((w) => w.value === weekday)?.label ?? '?';
 
   if (isLoading) return <Text style={styles.padded}>Caricamento...</Text>;
 
@@ -37,6 +41,30 @@ export default function ImpostazioniScreen() {
             </Pressable>
           )}
           ListEmptyComponent={<Text>Nessun cliente ancora.</Text>}
+        />
+      </View>
+
+      <View style={styles.sectionHeader}>
+        <Text style={styles.sectionTitle}>Impegni ricorrenti</Text>
+        <Pressable style={styles.addButton} onPress={() => router.push('/add-recurring-template')}>
+          <Text style={styles.addButtonText}>+ Impegno</Text>
+        </Pressable>
+      </View>
+      <View style={styles.listWrapper}>
+        <FlatList
+          style={{ flex: 1 }}
+          data={recurringTemplates ?? []}
+          keyExtractor={(t) => t.id}
+          renderItem={({ item }) => (
+            <Pressable
+              style={styles.clientRow}
+              onPress={() => router.push({ pathname: '/edit-recurring-template', params: { id: item.id } })}
+            >
+              <Text style={styles.clientName}>{item.title} — {item.person}</Text>
+              <Text>{weekdayLabel(item.weekday)}{item.time ? ` ${item.time}` : ''}</Text>
+            </Pressable>
+          )}
+          ListEmptyComponent={<Text>Nessun impegno ricorrente ancora.</Text>}
         />
       </View>
 
