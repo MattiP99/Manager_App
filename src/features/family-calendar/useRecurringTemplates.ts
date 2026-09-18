@@ -1,6 +1,8 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '../../lib/supabase';
 import { useHousehold } from '../household/useHousehold';
+import { toLocalDateString } from '../../lib/dates';
+import { cancelReminderFor } from '../notifications/syncReminders';
 import type { FamilyCategory, RecurringTemplate } from './recurringOccurrences';
 
 export function useRecurringTemplates() {
@@ -68,6 +70,12 @@ export function useUpdateRecurringTemplate() {
       time?: string;
       note?: string;
     }) => {
+      const { data: current } = await supabase
+        .from('recurring_templates')
+        .select('weekday')
+        .eq('id', input.id)
+        .single();
+
       const { data, error } = await supabase
         .from('recurring_templates')
         .update({
@@ -82,9 +90,32 @@ export function useUpdateRecurringTemplate() {
         .select('id, title, category, person, weekday, time, note')
         .single();
       if (error) throw error;
-      return data;
+
+      let orphanedOverrideIds: string[] = [];
+      if (current && current.weekday !== input.weekday) {
+        const today = toLocalDateString(new Date());
+        const { data: futureOverrides } = await supabase
+          .from('calendar_events')
+          .select('id')
+          .eq('recurring_template_id', input.id)
+          .gte('date', today);
+        orphanedOverrideIds = (futureOverrides ?? []).map((o) => o.id);
+        if (orphanedOverrideIds.length > 0) {
+          await supabase.from('calendar_events').delete().in('id', orphanedOverrideIds);
+        }
+      }
+
+      return { template: data, orphanedOverrideIds };
     },
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['recurring-templates'] }),
+    onSuccess: ({ orphanedOverrideIds }) => {
+      queryClient.invalidateQueries({ queryKey: ['recurring-templates'] });
+      if (orphanedOverrideIds.length > 0) {
+        queryClient.invalidateQueries({ queryKey: ['calendar-events'] });
+        for (const id of orphanedOverrideIds) {
+          cancelReminderFor(`event:${id}`);
+        }
+      }
+    },
   });
 }
 
@@ -92,10 +123,21 @@ export function useDeleteRecurringTemplate() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (id: string) => {
+      const { data: overrides } = await supabase
+        .from('calendar_events')
+        .select('id')
+        .eq('recurring_template_id', id);
       const { error } = await supabase.from('recurring_templates').delete().eq('id', id);
       if (error) throw error;
-      return id;
+      return { id, overrideIds: (overrides ?? []).map((o) => o.id) };
     },
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['recurring-templates'] }),
+    onSuccess: ({ id, overrideIds }) => {
+      queryClient.invalidateQueries({ queryKey: ['recurring-templates'] });
+      queryClient.invalidateQueries({ queryKey: ['calendar-events'] });
+      cancelReminderFor(`template:${id}`);
+      for (const overrideId of overrideIds) {
+        cancelReminderFor(`event:${overrideId}`);
+      }
+    },
   });
 }

@@ -1,7 +1,7 @@
 import { useEffect } from 'react';
 import { AppState } from 'react-native';
 import { toLocalDateString } from '../../lib/dates';
-import { syncReminderFor } from '../notifications/syncReminders';
+import { cancelReminderFor, syncReminderFor } from '../notifications/syncReminders';
 import { nextOccurrenceDate } from './recurringOccurrences';
 import { useAllCalendarEvents } from './useCalendarEvents';
 import { useRecurringTemplates } from './useRecurringTemplates';
@@ -21,12 +21,18 @@ export function useSyncRecurringReminders() {
         const override = (events ?? []).find(
           (e) => e.recurring_template_id === template.id && e.date === nextDate
         );
-        if (override?.is_cancelled) continue;
 
-        const title = override?.title ?? template.title;
-        const person = override?.person ?? template.person;
-        const time = override?.time ?? template.time;
-        syncReminderFor(`template:${template.id}`, `Promemoria: ${title}`, `${person} — domani`, nextDate, time);
+        if (override) {
+          // This occurrence now has a real calendar_events row (an edit or
+          // a skip via "Salta oggi") — that row's own mutation already
+          // owns the reminder for it (event:<id>, or none at all if
+          // cancelled). The sweep must not also hold a stale
+          // template:<id> reminder for the same date.
+          cancelReminderFor(`template:${template.id}`);
+          continue;
+        }
+
+        syncReminderFor(`template:${template.id}`, `Promemoria: ${template.title}`, `${template.person} — domani`, nextDate, template.time);
       }
     };
 

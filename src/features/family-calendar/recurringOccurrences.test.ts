@@ -128,4 +128,9 @@ describe('nextOccurrenceDate', () => {
     // 2026-09-29 è martedì; il prossimo martedì da mercoledì 2026-09-30 è il 2026-10-06
     expect(nextOccurrenceDate(2, '2026-09-30')).toBe('2026-10-06');
   });
+
+  it('wraps correctly across a year boundary', () => {
+    // 2026-12-30 è mercoledì; il prossimo martedì (weekday 2) è il 2027-01-05
+    expect(nextOccurrenceDate(2, '2026-12-30')).toBe('2027-01-05');
+  });
 });
