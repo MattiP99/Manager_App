@@ -39,6 +39,63 @@ export type Database = {
   }
   public: {
     Tables: {
+      calendar_events: {
+        Row: {
+          category: string
+          created_at: string
+          date: string
+          household_id: string
+          id: string
+          is_cancelled: boolean
+          note: string | null
+          person: string
+          recurring_template_id: string | null
+          time: string | null
+          title: string
+        }
+        Insert: {
+          category: string
+          created_at?: string
+          date: string
+          household_id: string
+          id?: string
+          is_cancelled?: boolean
+          note?: string | null
+          person: string
+          recurring_template_id?: string | null
+          time?: string | null
+          title: string
+        }
+        Update: {
+          category?: string
+          created_at?: string
+          date?: string
+          household_id?: string
+          id?: string
+          is_cancelled?: boolean
+          note?: string | null
+          person?: string
+          recurring_template_id?: string | null
+          time?: string | null
+          title?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "calendar_events_household_id_fkey"
+            columns: ["household_id"]
+            isOneToOne: false
+            referencedRelation: "households"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "calendar_events_recurring_template_id_fkey"
+            columns: ["recurring_template_id"]
+            isOneToOne: false
+            referencedRelation: "recurring_templates"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       clients: {
         Row: {
           active: boolean
@@ -159,6 +216,50 @@ export type Database = {
           },
           {
             foreignKeyName: "payments_household_id_fkey"
+            columns: ["household_id"]
+            isOneToOne: false
+            referencedRelation: "households"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      recurring_templates: {
+        Row: {
+          category: string
+          created_at: string
+          household_id: string
+          id: string
+          note: string | null
+          person: string
+          time: string | null
+          title: string
+          weekday: number
+        }
+        Insert: {
+          category: string
+          created_at?: string
+          household_id: string
+          id?: string
+          note?: string | null
+          person: string
+          time?: string | null
+          title: string
+          weekday: number
+        }
+        Update: {
+          category?: string
+          created_at?: string
+          household_id?: string
+          id?: string
+          note?: string | null
+          person?: string
+          time?: string | null
+          title?: string
+          weekday?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "recurring_templates_household_id_fkey"
             columns: ["household_id"]
             isOneToOne: false
             referencedRelation: "households"
