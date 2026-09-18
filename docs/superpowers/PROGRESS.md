@@ -10,14 +10,14 @@ A family-management app (calendar, client/payment tracking for a cleaning-servic
 - **GitHub:** https://github.com/MattiP99/Manager_App (branch `main`, no other branches — see "Workflow" below)
 - **Supabase Cloud project ref:** `qivxrbhbffwqqmaadpnl` (already created, already linked)
 
-## Status: 2 of 6 planned blocks complete
+## Status: 3 of 6 planned blocks complete
 
 The spec was decomposed into sequential sub-project blocks (each its own plan doc under `docs/superpowers/plans/`, executed and merged one at a time):
 
 1. ✅ **Fondamenta** (`2026-09-17-fondamenta.md`) — auth, household multi-tenancy, RLS foundation, tab shell. Complete, merged.
 2. ✅ **Clienti + Pagamenti** (`2026-09-17-clienti-pagamenti.md`) — client management, work session logging, FIFO payment ledger, Pagamenti tab. Complete, merged.
-3. ⬜ **Calendario Lavoro** — NEXT. Visual day/week/month calendar for work sessions (color-coded paid/unpaid), reusing `work_session_status` (Task 1 of block 2) and `useCreateWorkSession` (Task 4 of block 2). Not started — no spec/plan doc written yet for this block specifically, only the overall spec's §5 mentions a reusable `CalendarView` component.
-4. ⬜ **Calendario familiare** (Francesca's appointments, recurring events)
+3. ✅ **Calendario Lavoro** (`2026-09-18-calendario-lavoro.md`) — Visual day/week/month calendar for work sessions reusing `work_session_status` and `useCreateWorkSession`. Complete, merged.
+4. ⬜ **Calendario familiare** (Francesca's appointments, recurring events) — NEXT
 5. ⬜ **Spese mensili**
 6. ⬜ **Note** (with encrypted password section)
 7. ⬜ **README finale** with screenshots/GIF demo/architecture diagram (explicitly requested by the user for a portfolio — see spec §"README" discussion in conversation, not in the spec doc itself)
@@ -48,6 +48,7 @@ These bit multiple tasks across both blocks before being understood. **Include t
 5. **This execution environment has no interactive/headless browser tooling** (no Playwright/Puppeteer, nothing that can click through a UI). Established, repeatedly-applied standard: task/final reviews substitute careful hand-tracing of the actual diffed code (navigation param names matching end-to-end, conditional logic not inverted, correct field usage) for a literal browser click-through, and this has been treated as sufficient rather than a blocking gap — but real bugs have still been caught this way (see below), so don't use this as an excuse to skip careful review.
 6. **List queries need an explicit secondary `.order()` tiebreak** — Postgres doesn't guarantee row order among ties on a single sort column (`date`, `name`, etc.). This has already had to be fixed twice (once in Fondamenta for household selection, once in Clienti+Pagamenti's final review for session/payment/client lists) — get it right from the start in new queries: `.order(primaryColumn).order('created_at', { ascending: false })` (or `.order('id')` when there's no `created_at` to lean on).
 7. **`src/lib/database.types.ts` must be regenerated after every schema change**: `export SUPABASE_ACCESS_TOKEN=$(grep SUPABASE_ACCESS_TOKEN .env | cut -d '=' -f2)` then `npx supabase gen types typescript --project-id qivxrbhbffwqqmaadpnl > src/lib/database.types.ts`. Use the typed client (`createClient<Database>`) — casts like `as WorkSessionStatus[]` are fine when narrowly scoped to a known codegen quirk (generated/view columns marked nullable even when the schema guarantees they're present) but were specifically investigated field-by-field in two separate reviews before being accepted as safe, not rubber-stamped.
+8. **The root layout's `<Slot />`-without-`Stack` (see item above about explicit back buttons) also means screen-local `useState` is lost on navigate-away-and-back** — there's no navigator keeping the previous screen instance alive, so any in-memory UI state on a tab screen resets to its initial value the moment you leave and return. Found in the Calendario Lavoro final review: `CalendarView`'s view-mode/anchor-date state resets to today's week after visiting `/day/[date]` and pressing back. Accepted as a known limitation, not fixed (a real fix means moving that state into URL search params) — the same latent behavior already existed in `pagamenti.tsx`'s period filter before this block. Note it so a future block doesn't "discover" it again.
 
 ## Real bugs that were actually caught this way (evidence the process works, don't skip steps to save time)
 

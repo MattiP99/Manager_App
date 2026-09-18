@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import { View, Text, StyleSheet, ScrollView } from 'react-native';
 import { router } from 'expo-router';
 import { CalendarView } from '../../components/CalendarView';
 import { useAllWorkSessionsStatus } from '../../features/work-sessions/useWorkSessions';
@@ -37,7 +37,7 @@ export default function CalendarioScreen() {
   }, [sessions]);
 
   return (
-    <View style={styles.container}>
+    <ScrollView contentContainerStyle={styles.container}>
       <Text style={styles.title}>Calendario Lavoro</Text>
       <CalendarView
         initialView="week"
@@ -47,7 +47,7 @@ export default function CalendarioScreen() {
         }}
         onDayPress={(date) => router.push(`/day/${date}`)}
       />
-    </View>
+    </ScrollView>
   );
 }
 

@@ -4,18 +4,16 @@ import { View, Text, Pressable, StyleSheet } from 'react-native';
 import {
   CalendarDay,
   CalendarViewMode,
+  formatPeriodLabel,
   getDayView,
   getMonthGridDays,
   getWeekDays,
+  ITALIAN_WEEKDAYS_SHORT,
   shiftAnchorDate,
+  weekdayShortLabel,
 } from '../features/calendar/calendarGrid';
 import { parseLocalDateString, toLocalDateString } from '../lib/dates';
 
-const ITALIAN_MONTHS = [
-  'Gennaio', 'Febbraio', 'Marzo', 'Aprile', 'Maggio', 'Giugno',
-  'Luglio', 'Agosto', 'Settembre', 'Ottobre', 'Novembre', 'Dicembre',
-];
-const ITALIAN_WEEKDAYS_SHORT = ['Lun', 'Mar', 'Mer', 'Gio', 'Ven', 'Sab', 'Dom'];
 const VIEW_LABELS: Record<CalendarViewMode, string> = { day: 'Giorno', week: 'Settimana', month: 'Mese' };
 
 export interface CalendarViewProps {
@@ -28,29 +26,6 @@ function getDaysForView(view: CalendarViewMode, anchorDate: string): CalendarDay
   if (view === 'day') return getDayView(anchorDate);
   if (view === 'week') return getWeekDays(anchorDate);
   return getMonthGridDays(anchorDate);
-}
-
-function formatPeriodLabel(view: CalendarViewMode, days: CalendarDay[]): string {
-  const first = parseLocalDateString(days[0].date);
-  const last = parseLocalDateString(days[days.length - 1].date);
-
-  if (view === 'day') {
-    return `${first.getDate()} ${ITALIAN_MONTHS[first.getMonth()]} ${first.getFullYear()}`;
-  }
-  if (view === 'month') {
-    const current = days.find((d) => d.inCurrentPeriod)!;
-    const currentDate = parseLocalDateString(current.date);
-    return `${ITALIAN_MONTHS[currentDate.getMonth()]} ${currentDate.getFullYear()}`;
-  }
-  if (first.getMonth() === last.getMonth()) {
-    return `${first.getDate()} - ${last.getDate()} ${ITALIAN_MONTHS[first.getMonth()]} ${first.getFullYear()}`;
-  }
-  return `${first.getDate()} ${ITALIAN_MONTHS[first.getMonth()]} - ${last.getDate()} ${ITALIAN_MONTHS[last.getMonth()]} ${last.getFullYear()}`;
-}
-
-function weekdayShortLabel(dateStr: string): string {
-  const jsDay = parseLocalDateString(dateStr).getDay(); // 0=Sun..6=Sat
-  return ITALIAN_WEEKDAYS_SHORT[jsDay === 0 ? 6 : jsDay - 1];
 }
 
 function chunkIntoWeeks(days: CalendarDay[]): CalendarDay[][] {
@@ -66,7 +41,7 @@ export function CalendarView({ initialView = 'week', renderDay, onDayPress }: Ca
   const [anchorDate, setAnchorDate] = useState(() => toLocalDateString(new Date()));
 
   const days = getDaysForView(view, anchorDate);
-  const periodLabel = formatPeriodLabel(view, days);
+  const periodLabel = formatPeriodLabel(view, anchorDate, days);
 
   return (
     <View style={styles.container}>

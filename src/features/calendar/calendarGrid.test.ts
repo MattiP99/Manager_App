@@ -1,4 +1,12 @@
-import { getDayView, getMonthGridDays, getWeekDays, shiftAnchorDate } from './calendarGrid';
+import {
+  formatDayLabel,
+  formatPeriodLabel,
+  getDayView,
+  getMonthGridDays,
+  getWeekDays,
+  shiftAnchorDate,
+  weekdayShortLabel,
+} from './calendarGrid';
 import { addDays, parseLocalDateString } from '../../lib/dates';
 
 describe('getDayView', () => {
@@ -66,6 +74,52 @@ describe('getMonthGridDays', () => {
     const days = getMonthGridDays('2028-02-10');
     const currentPeriodDays = days.filter((d) => d.inCurrentPeriod);
     expect(currentPeriodDays).toHaveLength(29);
+  });
+});
+
+describe('weekdayShortLabel', () => {
+  it('returns "Lun" for a Monday date', () => {
+    expect(weekdayShortLabel('2026-09-14')).toBe('Lun'); // 2026-09-14 is a Monday
+  });
+
+  it('returns "Dom" for a Sunday date', () => {
+    expect(weekdayShortLabel('2026-09-20')).toBe('Dom'); // 2026-09-20 is a Sunday
+  });
+});
+
+describe('formatDayLabel', () => {
+  it('formats a date as "D Month YYYY" in Italian', () => {
+    expect(formatDayLabel('2026-09-18')).toBe('18 Settembre 2026');
+  });
+});
+
+describe('formatPeriodLabel', () => {
+  it('day view: uses the anchor date directly', () => {
+    const anchorDate = '2026-09-18';
+    expect(formatPeriodLabel('day', anchorDate, getDayView(anchorDate))).toBe('18 Settembre 2026');
+  });
+
+  it('week view within a single month: shows one trailing month/year', () => {
+    const anchorDate = '2026-09-18';
+    expect(formatPeriodLabel('week', anchorDate, getWeekDays(anchorDate))).toBe('14 - 20 Settembre 2026');
+  });
+
+  it('week view spanning two months in the same year: shows both months, one trailing year', () => {
+    const anchorDate = '2026-09-28'; // Monday 28 Sep - Sunday 4 Oct 2026
+    expect(formatPeriodLabel('week', anchorDate, getWeekDays(anchorDate))).toBe('28 Settembre - 4 Ottobre 2026');
+  });
+
+  it('week view spanning a year boundary: shows both months AND both years (the cross-year bug fix)', () => {
+    const anchorDate = '2026-12-28'; // Monday 28 Dec 2026 - Sunday 3 Jan 2027
+    const label = formatPeriodLabel('week', anchorDate, getWeekDays(anchorDate));
+    expect(label).toBe('28 Dicembre 2026 - 3 Gennaio 2027');
+    expect(label).toContain('2026');
+    expect(label).toContain('2027');
+  });
+
+  it('month view: uses the anchor date\'s month/year, not the grid days', () => {
+    const anchorDate = '2026-09-15';
+    expect(formatPeriodLabel('month', anchorDate, getMonthGridDays(anchorDate))).toBe('Settembre 2026');
   });
 });
 

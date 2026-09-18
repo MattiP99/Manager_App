@@ -2,6 +2,7 @@ import { View, Text, Pressable, StyleSheet, FlatList } from 'react-native';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useClients } from '../../features/clients/useClients';
 import { useAllWorkSessionsStatus } from '../../features/work-sessions/useWorkSessions';
+import { formatDayLabel } from '../../features/calendar/calendarGrid';
 
 export default function DayDetailScreen() {
   const { date } = useLocalSearchParams<{ date: string }>();
@@ -16,7 +17,7 @@ export default function DayDetailScreen() {
       <Pressable onPress={() => router.back()}>
         <Text style={styles.back}>← Indietro</Text>
       </Pressable>
-      <Text style={styles.title}>{date}</Text>
+      <Text style={styles.title}>{formatDayLabel(date)}</Text>
 
       <FlatList
         style={{ flex: 1 }}

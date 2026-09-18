@@ -55,3 +55,41 @@ export function shiftAnchorDate(anchorDate: string, view: CalendarViewMode, dire
   targetMonthFirst.setDate(Math.min(day, daysInTargetMonth));
   return toLocalDateString(targetMonthFirst);
 }
+
+export const ITALIAN_MONTHS = [
+  'Gennaio', 'Febbraio', 'Marzo', 'Aprile', 'Maggio', 'Giugno',
+  'Luglio', 'Agosto', 'Settembre', 'Ottobre', 'Novembre', 'Dicembre',
+];
+export const ITALIAN_WEEKDAYS_SHORT = ['Lun', 'Mar', 'Mer', 'Gio', 'Ven', 'Sab', 'Dom'];
+
+export function weekdayShortLabel(dateStr: string): string {
+  const jsDay = parseLocalDateString(dateStr).getDay(); // 0=Sun..6=Sat
+  return ITALIAN_WEEKDAYS_SHORT[jsDay === 0 ? 6 : jsDay - 1];
+}
+
+export function formatDayLabel(dateStr: string): string {
+  const d = parseLocalDateString(dateStr);
+  return `${d.getDate()} ${ITALIAN_MONTHS[d.getMonth()]} ${d.getFullYear()}`;
+}
+
+export function formatPeriodLabel(view: CalendarViewMode, anchorDate: string, days: CalendarDay[]): string {
+  if (view === 'day') {
+    return formatDayLabel(anchorDate);
+  }
+  if (view === 'month') {
+    const anchor = parseLocalDateString(anchorDate);
+    return `${ITALIAN_MONTHS[anchor.getMonth()]} ${anchor.getFullYear()}`;
+  }
+
+  // week
+  const first = parseLocalDateString(days[0].date);
+  const last = parseLocalDateString(days[days.length - 1].date);
+
+  if (first.getFullYear() !== last.getFullYear()) {
+    return `${first.getDate()} ${ITALIAN_MONTHS[first.getMonth()]} ${first.getFullYear()} - ${last.getDate()} ${ITALIAN_MONTHS[last.getMonth()]} ${last.getFullYear()}`;
+  }
+  if (first.getMonth() === last.getMonth()) {
+    return `${first.getDate()} - ${last.getDate()} ${ITALIAN_MONTHS[first.getMonth()]} ${first.getFullYear()}`;
+  }
+  return `${first.getDate()} ${ITALIAN_MONTHS[first.getMonth()]} - ${last.getDate()} ${ITALIAN_MONTHS[last.getMonth()]} ${last.getFullYear()}`;
+}
