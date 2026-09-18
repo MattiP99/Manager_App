@@ -3,12 +3,14 @@ import { Slot, useRouter, useSegments } from 'expo-router';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { useSession } from '../features/auth/useSession';
 import { useHousehold } from '../features/household/useHousehold';
+import { useSyncRecurringReminders } from '../features/family-calendar/useSyncRecurringReminders';
 
 const queryClient = new QueryClient();
 
 function AuthGate() {
   const { session, isLoading: sessionLoading } = useSession();
   const { data: household, isLoading: householdLoading } = useHousehold();
+  useSyncRecurringReminders();
   const segments = useSegments();
   const router = useRouter();
 

@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '../../lib/supabase';
 import { useHousehold } from '../household/useHousehold';
+import { cancelReminderFor, syncReminderFor } from '../notifications/syncReminders';
 import type { CalendarEvent, FamilyCategory } from './recurringOccurrences';
 
 export function useAllCalendarEvents() {
@@ -53,7 +54,10 @@ export function useCreateCalendarEvent() {
       if (error) throw error;
       return data as CalendarEvent;
     },
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['calendar-events'] }),
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ['calendar-events'] });
+      syncReminderFor(`event:${data.id}`, `Promemoria: ${data.title}`, `${data.person} — domani`, data.date, data.time);
+    },
   });
 }
 
@@ -85,7 +89,10 @@ export function useUpdateCalendarEvent() {
       if (error) throw error;
       return data as CalendarEvent;
     },
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['calendar-events'] }),
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ['calendar-events'] });
+      syncReminderFor(`event:${data.id}`, `Promemoria: ${data.title}`, `${data.person} — domani`, data.date, data.time);
+    },
   });
 }
 
@@ -97,7 +104,10 @@ export function useDeleteCalendarEvent() {
       if (error) throw error;
       return id;
     },
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['calendar-events'] }),
+    onSuccess: (id) => {
+      queryClient.invalidateQueries({ queryKey: ['calendar-events'] });
+      cancelReminderFor(`event:${id}`);
+    },
   });
 }
 
@@ -138,6 +148,13 @@ export function useUpsertOccurrenceOverride() {
       if (error) throw error;
       return data as CalendarEvent;
     },
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['calendar-events'] }),
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ['calendar-events'] });
+      if (data.is_cancelled) {
+        cancelReminderFor(`event:${data.id}`);
+      } else {
+        syncReminderFor(`event:${data.id}`, `Promemoria: ${data.title}`, `${data.person} — domani`, data.date, data.time);
+      }
+    },
   });
 }
