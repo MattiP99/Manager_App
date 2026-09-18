@@ -37,7 +37,7 @@ export default function CalendarioScreen() {
   }, [sessions]);
 
   return (
-    <ScrollView contentContainerStyle={styles.container}>
+    <ScrollView style={styles.scrollView} contentContainerStyle={styles.scrollContent}>
       <Text style={styles.title}>Calendario Lavoro</Text>
       <CalendarView
         initialView="week"
@@ -52,7 +52,8 @@ export default function CalendarioScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, padding: 24, gap: 12 },
+  scrollView: { flex: 1 },
+  scrollContent: { padding: 24, gap: 12 },
   title: { fontSize: 22, fontWeight: '600' },
   statusIndicator: { flex: 1, minHeight: 16, borderRadius: 4, marginTop: 2, overflow: 'hidden' },
   statusHalf: { flex: 1 },
