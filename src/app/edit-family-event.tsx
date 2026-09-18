@@ -51,6 +51,7 @@ export default function EditFamilyEventScreen() {
     }
   }, [manualEvent?.id, existingOverride?.id, template?.id, loaded, isOverrideMode]);
 
+  if (id && !events) return <Text style={styles.padded}>Caricamento...</Text>;
   if (!manualEvent && !isOverrideMode) return <Text style={styles.padded}>Evento non trovato.</Text>;
   if (isOverrideMode && !template) return <Text style={styles.padded}>Caricamento...</Text>;
 
