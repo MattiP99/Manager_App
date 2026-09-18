@@ -130,7 +130,7 @@ const styles = StyleSheet.create({
   navButton: { padding: 8, minWidth: 36, alignItems: 'center' },
   navButtonText: { fontSize: 20, fontWeight: '600' },
   periodLabel: { fontSize: 16, fontWeight: '600' },
-  weekdayHeaderRow: { flexDirection: 'row' },
+  weekdayHeaderRow: { flexDirection: 'row', gap: 4 },
   weekdayHeaderText: { flex: 1, textAlign: 'center', fontSize: 12, color: '#6b7280' },
   weekRow: { flexDirection: 'row', gap: 4 },
   dayCell: { flex: 1, minHeight: 56, borderRadius: 6, borderWidth: 1, borderColor: '#eee', padding: 4, overflow: 'hidden' },
