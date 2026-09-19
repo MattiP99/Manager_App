@@ -219,6 +219,92 @@ export type Database = {
         }
         Relationships: []
       }
+      note_sections: {
+        Row: {
+          created_at: string
+          encryption_canary: string | null
+          encryption_salt: string | null
+          household_id: string
+          id: string
+          sort_order: number
+          title: string
+          type: string
+        }
+        Insert: {
+          created_at?: string
+          encryption_canary?: string | null
+          encryption_salt?: string | null
+          household_id: string
+          id?: string
+          sort_order?: number
+          title: string
+          type: string
+        }
+        Update: {
+          created_at?: string
+          encryption_canary?: string | null
+          encryption_salt?: string | null
+          household_id?: string
+          id?: string
+          sort_order?: number
+          title?: string
+          type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "note_sections_household_id_fkey"
+            columns: ["household_id"]
+            isOneToOne: false
+            referencedRelation: "households"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      notes: {
+        Row: {
+          content: string | null
+          content_encrypted: string | null
+          created_at: string
+          household_id: string
+          id: string
+          section_id: string
+          title: string
+        }
+        Insert: {
+          content?: string | null
+          content_encrypted?: string | null
+          created_at?: string
+          household_id: string
+          id?: string
+          section_id: string
+          title: string
+        }
+        Update: {
+          content?: string | null
+          content_encrypted?: string | null
+          created_at?: string
+          household_id?: string
+          id?: string
+          section_id?: string
+          title?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "notes_household_id_fkey"
+            columns: ["household_id"]
+            isOneToOne: false
+            referencedRelation: "households"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "notes_section_id_fkey"
+            columns: ["section_id"]
+            isOneToOne: false
+            referencedRelation: "note_sections"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       payments: {
         Row: {
           amount: number
