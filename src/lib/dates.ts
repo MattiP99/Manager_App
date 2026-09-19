@@ -15,3 +15,19 @@ export function addDays(dateStr: string, days: number): string {
   date.setDate(date.getDate() + days);
   return toLocalDateString(date);
 }
+
+export function startOfMonth(dateStr: string): string {
+  const d = parseLocalDateString(dateStr);
+  return toLocalDateString(new Date(d.getFullYear(), d.getMonth(), 1));
+}
+
+export function endOfMonth(dateStr: string): string {
+  const d = parseLocalDateString(dateStr);
+  return toLocalDateString(new Date(d.getFullYear(), d.getMonth() + 1, 0));
+}
+
+/** Sposta l'ancora di un mese, sempre al giorno 1 del mese di destinazione — a differenza di shiftAnchorDate (calendarGrid.ts) non serve preservare il giorno del mese: chi chiama questa funzione ne legge solo mese/anno tramite startOfMonth/endOfMonth/monthLabel. */
+export function shiftMonth(dateStr: string, direction: 1 | -1): string {
+  const d = parseLocalDateString(dateStr);
+  return toLocalDateString(new Date(d.getFullYear(), d.getMonth() + direction, 1));
+}

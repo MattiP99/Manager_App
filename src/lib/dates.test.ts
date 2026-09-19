@@ -1,4 +1,4 @@
-import { addDays, parseLocalDateString, toLocalDateString } from './dates';
+import { addDays, endOfMonth, parseLocalDateString, shiftMonth, startOfMonth, toLocalDateString } from './dates';
 
 describe('toLocalDateString', () => {
   const originalTZ = process.env.TZ;
@@ -55,5 +55,47 @@ describe('addDays', () => {
   it('handles the February leap-year boundary', () => {
     expect(addDays('2028-02-28', 1)).toBe('2028-02-29'); // 2028 is a leap year
     expect(addDays('2027-02-28', 1)).toBe('2027-03-01'); // 2027 is not
+  });
+});
+
+describe('startOfMonth', () => {
+  it('returns the first day of the month', () => {
+    expect(startOfMonth('2026-09-18')).toBe('2026-09-01');
+  });
+});
+
+describe('endOfMonth', () => {
+  it('returns the last day of a 30-day month', () => {
+    expect(endOfMonth('2026-09-05')).toBe('2026-09-30');
+  });
+
+  it('returns the last day of a 31-day month', () => {
+    expect(endOfMonth('2026-10-05')).toBe('2026-10-31');
+  });
+
+  it('returns Feb 29 in a leap year', () => {
+    expect(endOfMonth('2028-02-01')).toBe('2028-02-29');
+  });
+
+  it('returns Feb 28 in a non-leap year', () => {
+    expect(endOfMonth('2027-02-01')).toBe('2027-02-28');
+  });
+});
+
+describe('shiftMonth', () => {
+  it('moves forward one month within the same year', () => {
+    expect(shiftMonth('2026-09-15', 1)).toBe('2026-10-01');
+  });
+
+  it('moves backward one month within the same year', () => {
+    expect(shiftMonth('2026-09-15', -1)).toBe('2026-08-01');
+  });
+
+  it('rolls forward across a year boundary', () => {
+    expect(shiftMonth('2026-12-15', 1)).toBe('2027-01-01');
+  });
+
+  it('rolls backward across a year boundary', () => {
+    expect(shiftMonth('2026-01-15', -1)).toBe('2025-12-01');
   });
 });
