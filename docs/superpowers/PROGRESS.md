@@ -10,15 +10,15 @@ A family-management app (calendar, client/payment tracking for a cleaning-servic
 - **GitHub:** https://github.com/MattiP99/Manager_App (branch `main`, no other branches — see "Workflow" below)
 - **Supabase Cloud project ref:** `qivxrbhbffwqqmaadpnl` (already created, already linked)
 
-## Status: 3 of 6 planned blocks complete
+## Status: 4 of 6 planned blocks complete
 
 The spec was decomposed into sequential sub-project blocks (each its own plan doc under `docs/superpowers/plans/`, executed and merged one at a time):
 
 1. ✅ **Fondamenta** (`2026-09-17-fondamenta.md`) — auth, household multi-tenancy, RLS foundation, tab shell. Complete, merged.
 2. ✅ **Clienti + Pagamenti** (`2026-09-17-clienti-pagamenti.md`) — client management, work session logging, FIFO payment ledger, Pagamenti tab. Complete, merged.
 3. ✅ **Calendario Lavoro** (`2026-09-18-calendario-lavoro.md`) — Visual day/week/month calendar for work sessions reusing `work_session_status` and `useCreateWorkSession`. Complete, merged.
-4. ⬜ **Calendario familiare** (Francesca's appointments, recurring events) — NEXT
-5. ⬜ **Spese mensili**
+4. ✅ **Calendario familiare** (`2026-09-18-calendario-familiare.md`) — recurring appointment templates + one-off exceptions/manual events for Francesca, `Lavoro|Francesca` toggle on the existing Calendario tab (reusing `CalendarView` unmodified as its second `renderDay` consumer), local `expo-notifications` reminders (day-before at 20:00) covering both saved events and unmaterialized recurring occurrences. Complete: all 7 tasks + final whole-branch review + fix wave + scoped re-review done, SDD workspace deleted. Local commits ahead of `origin/main`, not yet pushed — awaiting the user's push/keep-local decision via `finishing-a-development-branch`.
+5. ⬜ **Spese mensili** — NEXT
 6. ⬜ **Note** (with encrypted password section)
 7. ⬜ **README finale** with screenshots/GIF demo/architecture diagram (explicitly requested by the user for a portfolio — see spec §"README" discussion in conversation, not in the spec doc itself)
 
@@ -57,6 +57,7 @@ These bit multiple tasks across both blocks before being understood. **Include t
 - A spurious redirect bug from misreading React Query's `isLoading` on a disabled query (Fondamenta final review).
 - Two genuine money-correctness bugs in `dateRangeForPeriod` — a month-end date rollover silently dropping up to 3 days from period totals, and UTC-vs-local date computation misdating anything logged just after midnight (Clienti+Pagamenti final review) — both in the one function the plan explicitly required to be a tested pure function, which nonetheless shipped two helper functions with zero tests until the final review caught it.
 - Weak RLS test assertions that would have passed even with a broken policy (a placeholder client_id causing an FK failure instead of proving RLS was the actual blocker; an unchecked setup insert that could silently produce zero rows and make an isolation check trivially pass) — caught in task-level review, not by the tests' own green checkmarks.
+- A reminder-ownership split (Calendario familiare, final whole-branch review) — the per-occurrence-edit/skip mutation (Task 5) and the periodic recurring-template sweep (Task 6) each scheduled/cancelled local notifications under their own key (`event:<id>` vs `template:<id>`) with neither owning the full picture: "Salta solo oggi" left a stale reminder still firing, and "Modifica solo questo giorno" produced a duplicate reminder. Exactly the class of bug a task-scoped review structurally cannot see — Task 5 and Task 6 were each individually correct in isolation, and their per-task reviews were passed cleanly. Only the final whole-branch review, diffing both tasks together, caught it. Fixed by making the sweep defer to any existing override row for a date (cancel its own `template:` reminder and skip) rather than scheduling unconditionally.
 
 **Takeaway for whoever picks this up next:** independently re-verify `tsc`/test claims yourself rather than trusting implementer self-reports at face value — this has caught real problems on both blocks so far, not hypothetically.
 
