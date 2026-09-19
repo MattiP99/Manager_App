@@ -50,5 +50,11 @@
     "test": "jest --testPathIgnorePatterns=/tests/rls/",
     "test:rls": "jest tests/rls --runInBand"
   },
-  "private": true
+  "private": true,
+  "jest": {
+    "preset": "jest-expo/node",
+    "transformIgnorePatterns": [
+      "node_modules/(?!(@noble)/)"
+    ]
+  }
 }
