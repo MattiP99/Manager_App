@@ -1,10 +1,9 @@
 import { useEffect, useState } from 'react';
-import { View, TextInput, Text, Pressable, StyleSheet, ScrollView } from 'react-native';
+import { TextInput, Text, Pressable, StyleSheet, ScrollView } from 'react-native';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useNoteSections } from '../features/notes/useNoteSections';
 import { useCreateNote } from '../features/notes/useNotes';
-import { encryptText } from '../features/notes/crypto/aesNotes';
-import { loadStoredKey } from '../features/notes/crypto/secureKeyStore';
+import { encryptText, loadVerifiedKey } from '../features/notes/crypto/aesNotes';
 
 export default function AddNoteScreen() {
   const { sectionId } = useLocalSearchParams<{ sectionId: string }>();
@@ -19,10 +18,10 @@ export default function AddNoteScreen() {
   const isPasswordSection = section?.type === 'password';
 
   useEffect(() => {
-    if (isPasswordSection) {
-      loadStoredKey().then((key) => setKeyMissing(!key));
+    if (isPasswordSection && section) {
+      loadVerifiedKey(section).then((key) => setKeyMissing(!key));
     }
-  }, [isPasswordSection]);
+  }, [isPasswordSection, section?.id, section?.encryption_canary]);
 
   if (!sections) return <Text style={styles.padded}>Caricamento...</Text>;
   if (!section) return <Text style={styles.padded}>Sezione non trovata.</Text>;
@@ -34,7 +33,7 @@ export default function AddNoteScreen() {
     if (!title.trim() || !content.trim()) return;
 
     if (isPasswordSection) {
-      const key = await loadStoredKey();
+      const key = await loadVerifiedKey(section);
       if (!key) return;
       const contentEncrypted = await encryptText(content.trim(), key);
       createNote.mutate(

@@ -3,8 +3,8 @@ import { View, Text, TextInput, Pressable, StyleSheet, FlatList } from 'react-na
 import { router, useLocalSearchParams } from 'expo-router';
 import { useNoteSections, useConfigurePasswordSection } from '../../features/notes/useNoteSections';
 import { useNotesBySection } from '../../features/notes/useNotes';
-import { setupPasswordSection, unlockPasswordSection, decryptText } from '../../features/notes/crypto/aesNotes';
-import { loadStoredKey, storeKey } from '../../features/notes/crypto/secureKeyStore';
+import { setupPasswordSection, unlockPasswordSection, decryptText, loadVerifiedKey } from '../../features/notes/crypto/aesNotes';
+import { storeKey } from '../../features/notes/crypto/secureKeyStore';
 
 export default function NoteSectionScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -26,12 +26,12 @@ export default function NoteSectionScreen() {
   // cachata localmente (sblocco persistente tra riavvii) prima di chiedere
   // la passphrase.
   useEffect(() => {
-    if (!isPasswordSection) return;
-    loadStoredKey().then((stored) => {
-      setKey(stored);
+    if (!isPasswordSection || !section) return;
+    loadVerifiedKey(section).then((verified) => {
+      setKey(verified);
       setCheckedStoredKey(true);
     });
-  }, [isPasswordSection]);
+  }, [isPasswordSection, section?.id, section?.encryption_canary]);
 
   // Quando la chiave è disponibile, decifra tutte le note della sezione
   // Password per mostrarle in chiaro.
@@ -90,6 +90,8 @@ export default function NoteSectionScreen() {
       }
       await storeKey(unlockedKey);
       setKey(unlockedKey);
+    } catch (err) {
+      setUnlockError(err instanceof Error ? err.message : 'Si è verificato un errore. Riprova.');
     } finally {
       setIsSubmitting(false);
     }

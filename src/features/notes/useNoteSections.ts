@@ -58,9 +58,10 @@ export function useConfigurePasswordSection() {
         .from('note_sections')
         .update({ encryption_salt: input.saltHex, encryption_canary: input.canaryBase64 })
         .eq('id', input.sectionId)
+        .is('encryption_salt', null)
         .select('id, title, type, sort_order, encryption_salt, encryption_canary')
         .single();
-      if (error) throw error;
+      if (error) throw new Error('Questa sezione è già stata configurata da un altro dispositivo. Aggiorna e riprova a sbloccarla con la passphrase.');
       return data as NoteSection;
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['note-sections'] }),

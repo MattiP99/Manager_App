@@ -2,6 +2,7 @@ import { AESEncryptionKey, AESSealedData, aesDecryptAsync, aesEncryptAsync, getR
 import { bytesToHex, hexToBytes } from '@noble/hashes/utils.js';
 import { deriveKey } from './pbkdf2';
 import { decodeUtf8, encodeUtf8 } from './textCodec';
+import { loadStoredKey } from './secureKeyStore';
 
 const CANARY_PLAINTEXT = 'note-app-verify';
 const SALT_BYTES = 16;
@@ -41,6 +42,19 @@ export async function unlockPasswordSection(
     const saltBytes = hexToBytes(saltHex);
     const keyBytes = deriveKey(passphrase, saltBytes);
     const decoded = await decryptText(canaryBase64, keyBytes);
+    return decoded === CANARY_PLAINTEXT ? keyBytes : null;
+  } catch {
+    return null;
+  }
+}
+
+/** Legge la chiave cachata localmente e la verifica contro il canary della sezione PRIMA di considerarla valida — una chiave cachata da una sessione/household precedente (es. dopo un cambio utente) non deve mai essere trattata come "questa sezione è sbloccata". Restituisce null se la sezione non è ancora configurata (nessun canary), se non c'è alcuna chiave cachata, o se la chiave cachata non corrisponde al canary di QUESTA sezione. */
+export async function loadVerifiedKey(section: { encryption_salt: string | null; encryption_canary: string | null }): Promise<Uint8Array | null> {
+  if (!section.encryption_canary) return null;
+  const keyBytes = await loadStoredKey();
+  if (!keyBytes) return null;
+  try {
+    const decoded = await decryptText(section.encryption_canary, keyBytes);
     return decoded === CANARY_PLAINTEXT ? keyBytes : null;
   } catch {
     return null;

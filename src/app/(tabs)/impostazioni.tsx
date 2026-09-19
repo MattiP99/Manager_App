@@ -5,6 +5,7 @@ import { useHousehold } from '../../features/household/useHousehold';
 import { useClients } from '../../features/clients/useClients';
 import { useRecurringTemplates } from '../../features/family-calendar/useRecurringTemplates';
 import { WEEKDAY_OPTIONS } from '../../features/family-calendar/constants';
+import { clearStoredKey } from '../../features/notes/crypto/secureKeyStore';
 
 export default function ImpostazioniScreen() {
   const { data: household, isLoading } = useHousehold();
@@ -68,7 +69,13 @@ export default function ImpostazioniScreen() {
         />
       </View>
 
-      <Pressable style={styles.button} onPress={() => supabase.auth.signOut()}>
+      <Pressable
+        style={styles.button}
+        onPress={async () => {
+          await clearStoredKey();
+          await supabase.auth.signOut();
+        }}
+      >
         <Text style={styles.buttonText}>Esci</Text>
       </Pressable>
     </View>

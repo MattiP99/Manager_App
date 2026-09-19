@@ -1,10 +1,9 @@
 import { useEffect, useState } from 'react';
-import { View, TextInput, Text, Pressable, StyleSheet, ScrollView } from 'react-native';
+import { TextInput, Text, Pressable, StyleSheet, ScrollView } from 'react-native';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useNoteSections } from '../features/notes/useNoteSections';
 import { useDeleteNote, useNotesBySection, useUpdateNote } from '../features/notes/useNotes';
-import { decryptText, encryptText } from '../features/notes/crypto/aesNotes';
-import { loadStoredKey } from '../features/notes/crypto/secureKeyStore';
+import { decryptText, encryptText, loadVerifiedKey } from '../features/notes/crypto/aesNotes';
 
 export default function EditNoteScreen() {
   const { id, sectionId } = useLocalSearchParams<{ id: string; sectionId: string }>();
@@ -37,7 +36,7 @@ export default function EditNoteScreen() {
       setHydrated(true);
       return;
     }
-    loadStoredKey().then(async (key) => {
+    loadVerifiedKey(section).then(async (key) => {
       if (!key) {
         setDecryptError(true);
         setHydrated(true);
@@ -65,7 +64,7 @@ export default function EditNoteScreen() {
     if (!title.trim() || !content.trim()) return;
 
     if (isPasswordSection) {
-      const key = await loadStoredKey();
+      const key = await loadVerifiedKey(section);
       if (!key) return;
       const contentEncrypted = await encryptText(content.trim(), key);
       updateNote.mutate(
@@ -100,7 +99,7 @@ export default function EditNoteScreen() {
       />
 
       {updateNote.isError && <Text style={styles.error}>{(updateNote.error as Error).message}</Text>}
-      <Pressable style={styles.button} onPress={handleSave} disabled={updateNote.isPending}>
+      <Pressable style={styles.button} onPress={handleSave} disabled={updateNote.isPending || decryptError}>
         <Text style={styles.buttonText}>Salva</Text>
       </Pressable>
       <Pressable style={styles.deleteButton} onPress={handleDelete} disabled={deleteNote.isPending}>
