@@ -138,7 +138,7 @@ export default function NoteSectionScreen() {
             data={notes ?? []}
             keyExtractor={(n) => n.id}
             renderItem={({ item }) => (
-              <Pressable style={styles.row} onPress={() => router.push({ pathname: '/edit-note', params: { id: item.id } })}>
+              <Pressable style={styles.row} onPress={() => router.push({ pathname: '/edit-note', params: { id: item.id, sectionId: section.id } })}>
                 <Text style={styles.rowTitle}>{item.title}</Text>
                 <Text numberOfLines={1}>{isPasswordSection ? decryptedContent[item.id] ?? '...' : item.content}</Text>
               </Pressable>
