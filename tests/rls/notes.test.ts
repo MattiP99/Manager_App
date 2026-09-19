@@ -54,10 +54,11 @@ describe('note_sections/notes RLS isolation, bootstrap, and constraints', () => 
       .eq('type', 'info')
       .limit(1)
       .single();
+    const infoSectionId = infoSection!.id;
 
     await clientA.from('notes').insert({
       household_id: householdA.id,
-      section_id: infoSection.id,
+      section_id: infoSectionId,
       title: 'Segreto A',
       content: 'contenuto di A',
     });
@@ -77,7 +78,7 @@ describe('note_sections/notes RLS isolation, bootstrap, and constraints', () => 
 
     const insertAttempt = await clientB.from('notes').insert({
       household_id: householdA.id,
-      section_id: infoSection.id,
+      section_id: infoSectionId,
       title: 'Sneaky',
       content: 'intrusione',
     });
@@ -128,20 +129,21 @@ describe('note_sections/notes RLS isolation, bootstrap, and constraints', () => 
       .eq('type', 'info')
       .limit(1)
       .single();
+    const infoSectionId = infoSection!.id;
 
     const bothSet = await clientA
       .from('notes')
-      .insert({ household_id: household.id, section_id: infoSection.id, title: 'Both', content: 'a', content_encrypted: 'b' });
+      .insert({ household_id: household.id, section_id: infoSectionId, title: 'Both', content: 'a', content_encrypted: 'b' });
     expect(bothSet.error).not.toBeNull();
 
     const neitherSet = await clientA
       .from('notes')
-      .insert({ household_id: household.id, section_id: infoSection.id, title: 'Neither' });
+      .insert({ household_id: household.id, section_id: infoSectionId, title: 'Neither' });
     expect(neitherSet.error).not.toBeNull();
 
     const exactlyOne = await clientA
       .from('notes')
-      .insert({ household_id: household.id, section_id: infoSection.id, title: 'Valid', content: 'ok' });
+      .insert({ household_id: household.id, section_id: infoSectionId, title: 'Valid', content: 'ok' });
     expect(exactlyOne.error).toBeNull();
   });
 });
