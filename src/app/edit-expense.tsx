@@ -38,8 +38,10 @@ export default function EditExpenseScreen() {
   const categoryLabel = EXPENSE_CATEGORIES.find((c) => c.value === category)?.label ?? category;
 
   const handleSave = () => {
-    const amountNum = parseFloat(amount.replace(',', '.'));
+    if (!/^\d+([.,]\d{1,2})?$/.test(amount.trim())) return;
+    const amountNum = parseFloat(amount.trim().replace(',', '.'));
     if (isNaN(amountNum) || amountNum <= 0) return;
+    if (!date.trim()) return;
     if (category === 'francesca' && !francescaActivity) return;
     updateExpense.mutate(
       {

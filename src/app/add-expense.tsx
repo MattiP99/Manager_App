@@ -7,19 +7,21 @@ import type { ExpenseCategory, FrancescaActivity } from '../features/expenses/ex
 import { toLocalDateString } from '../lib/dates';
 
 export default function AddExpenseScreen() {
-  const { category: preselectedCategory } = useLocalSearchParams<{ category?: string }>();
+  const { category: preselectedCategory, date: preselectedDate } = useLocalSearchParams<{ category?: string; date?: string }>();
   const [category] = useState<ExpenseCategory>((preselectedCategory as ExpenseCategory) ?? 'supermercato');
   const [label, setLabel] = useState('');
   const [francescaActivity, setFrancescaActivity] = useState<FrancescaActivity | null>(null);
   const [amount, setAmount] = useState('');
-  const [date, setDate] = useState(toLocalDateString(new Date()));
+  const [date, setDate] = useState(preselectedDate ?? toLocalDateString(new Date()));
   const createExpense = useCreateExpense();
 
   const categoryLabel = EXPENSE_CATEGORIES.find((c) => c.value === category)?.label ?? category;
 
   const handleSubmit = () => {
-    const amountNum = parseFloat(amount.replace(',', '.'));
+    if (!/^\d+([.,]\d{1,2})?$/.test(amount.trim())) return;
+    const amountNum = parseFloat(amount.trim().replace(',', '.'));
     if (isNaN(amountNum) || amountNum <= 0) return;
+    if (!date.trim()) return;
     if (category === 'francesca' && !francescaActivity) return;
     createExpense.mutate(
       {

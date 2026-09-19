@@ -40,7 +40,7 @@ export default function SpeseScreen() {
                 <Text style={styles.cardTotal}>€{summary.total.toFixed(2)}</Text>
                 <Pressable
                   style={styles.addButton}
-                  onPress={() => router.push({ pathname: '/add-expense', params: { category: summary.category } })}
+                  onPress={() => router.push({ pathname: '/add-expense', params: { category: summary.category, date: anchorDate } })}
                 >
                   <Text style={styles.addButtonText}>+</Text>
                 </Pressable>
