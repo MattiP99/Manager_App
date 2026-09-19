@@ -10,8 +10,7 @@ const SALT_BYTES = 16;
 export async function encryptText(plaintext: string, keyBytes: Uint8Array): Promise<string> {
   const key = await AESEncryptionKey.import(keyBytes);
   const sealed = await aesEncryptAsync(encodeUtf8(plaintext), key);
-  const combined = await sealed.combined('base64');
-  return combined as string;
+  return sealed.combined('base64');
 }
 
 /** Decifra una stringa base64 (prodotta da encryptText) tornando al testo in chiaro originale. Lancia un'eccezione se la chiave è sbagliata (il tag di autenticazione GCM non verifica). */
@@ -19,7 +18,7 @@ export async function decryptText(combinedBase64: string, keyBytes: Uint8Array):
   const key = await AESEncryptionKey.import(keyBytes);
   const sealed = AESSealedData.fromCombined(combinedBase64);
   const bytes = await aesDecryptAsync(sealed, key, { output: 'bytes' });
-  return decodeUtf8(bytes as Uint8Array);
+  return decodeUtf8(bytes);
 }
 
 /** Prima configurazione della sezione Password: genera un salt casuale, deriva la chiave dalla passphrase scelta dall'utente, e cifra un valore noto (canary) con quella chiave per poterla verificare in futuro. Il chiamante salva saltHex/canaryBase64 su note_sections e keyBytes localmente (vedi secureKeyStore.ts). */
@@ -38,9 +37,9 @@ export async function unlockPasswordSection(
   saltHex: string,
   canaryBase64: string
 ): Promise<Uint8Array | null> {
-  const saltBytes = hexToBytes(saltHex);
-  const keyBytes = deriveKey(passphrase, saltBytes);
   try {
+    const saltBytes = hexToBytes(saltHex);
+    const keyBytes = deriveKey(passphrase, saltBytes);
     const decoded = await decryptText(canaryBase64, keyBytes);
     return decoded === CANARY_PLAINTEXT ? keyBytes : null;
   } catch {
