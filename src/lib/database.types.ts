@@ -131,6 +131,47 @@ export type Database = {
           },
         ]
       }
+      expenses: {
+        Row: {
+          amount: number
+          category: string
+          created_at: string
+          date: string
+          francesca_activity: string | null
+          household_id: string
+          id: string
+          label: string | null
+        }
+        Insert: {
+          amount: number
+          category: string
+          created_at?: string
+          date: string
+          francesca_activity?: string | null
+          household_id: string
+          id?: string
+          label?: string | null
+        }
+        Update: {
+          amount?: number
+          category?: string
+          created_at?: string
+          date?: string
+          francesca_activity?: string | null
+          household_id?: string
+          id?: string
+          label?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "expenses_household_id_fkey"
+            columns: ["household_id"]
+            isOneToOne: false
+            referencedRelation: "households"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       household_members: {
         Row: {
           created_at: string
