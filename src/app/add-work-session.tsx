@@ -3,7 +3,7 @@ import { View, TextInput, Text, Pressable, StyleSheet, ScrollView } from 'react-
 import { router, useLocalSearchParams } from 'expo-router';
 import { useClients } from '../features/clients/useClients';
 import { useCreateWorkSession } from '../features/work-sessions/useWorkSessions';
-import { isEndAfterStart, isValidTimeFormat, toLocalDateString } from '../lib/dates';
+import { hoursBetweenTimes, isValidTimeRange, toLocalDateString } from '../lib/dates';
 
 export default function AddWorkSessionScreen() {
   const { clientId: preselectedClientId, date: preselectedDate } = useLocalSearchParams<{ clientId?: string; date?: string }>();
@@ -14,6 +14,7 @@ export default function AddWorkSessionScreen() {
   const [startTime, setStartTime] = useState('');
   const [endTime, setEndTime] = useState('');
   const [note, setNote] = useState('');
+  const [validationError, setValidationError] = useState<string | null>(null);
   const createSession = useCreateWorkSession();
 
   const selectedClient = clients?.find((c) => c.id === clientId);
@@ -21,7 +22,15 @@ export default function AddWorkSessionScreen() {
   const handleSubmit = () => {
     const hoursNum = parseFloat(hours.replace(',', '.'));
     if (!selectedClient || isNaN(hoursNum) || hoursNum <= 0) return;
-    if (!isValidTimeFormat(startTime) || !isValidTimeFormat(endTime) || !isEndAfterStart(startTime, endTime)) return;
+    if (!isValidTimeRange(startTime, endTime)) {
+      setValidationError("Orario non valido — usa il formato HH:MM con la fine dopo l'inizio.");
+      return;
+    }
+    if (hoursNum > hoursBetweenTimes(startTime, endTime)) {
+      setValidationError('Le ore lavorate non possono superare la durata tra inizio e fine.');
+      return;
+    }
+    setValidationError(null);
     createSession.mutate(
       { clientId, date, hours: hoursNum, rateSnapshot: selectedClient.hourly_rate, startTime, endTime, note: note.trim() || undefined },
       { onSuccess: () => router.back() }
@@ -55,6 +64,7 @@ export default function AddWorkSessionScreen() {
       </View>
       <TextInput style={styles.input} placeholder="Nota (opzionale)" value={note} onChangeText={setNote} />
 
+      {validationError && <Text style={styles.error}>{validationError}</Text>}
       {createSession.isError && <Text style={styles.error}>{(createSession.error as Error).message}</Text>}
       <Pressable style={styles.button} onPress={handleSubmit} disabled={createSession.isPending || !selectedClient}>
         <Text style={styles.buttonText}>{createSession.isPending ? 'Salvataggio...' : 'Salva'}</Text>

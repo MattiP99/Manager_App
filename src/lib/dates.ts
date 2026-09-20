@@ -36,6 +36,22 @@ export function isValidTimeFormat(value: string): boolean {
   return /^([01]\d|2[0-3]):[0-5]\d$/.test(value);
 }
 
+/** Precondition: both arguments are valid zero-padded HH:MM strings (see isValidTimeFormat) — this does a plain string comparison, not time-aware arithmetic. */
 export function isEndAfterStart(start: string, end: string): boolean {
   return end > start;
+}
+
+export function isValidTimeRange(start: string, end: string): boolean {
+  return isValidTimeFormat(start) && isValidTimeFormat(end) && isEndAfterStart(start, end);
+}
+
+export function isValidOptionalTimeRange(start: string, end: string): boolean {
+  if (!start.trim() && !end.trim()) return true;
+  return isValidTimeRange(start, end);
+}
+
+export function hoursBetweenTimes(start: string, end: string): number {
+  const [startHours, startMinutes] = start.split(':').map(Number);
+  const [endHours, endMinutes] = end.split(':').map(Number);
+  return (endHours * 60 + endMinutes - (startHours * 60 + startMinutes)) / 60;
 }

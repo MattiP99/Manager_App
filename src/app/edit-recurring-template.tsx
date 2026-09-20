@@ -3,7 +3,7 @@ import { View, TextInput, Text, Pressable, StyleSheet, ScrollView } from 'react-
 import { router, useLocalSearchParams } from 'expo-router';
 import { useDeleteRecurringTemplate, useRecurringTemplates, useUpdateRecurringTemplate } from '../features/family-calendar/useRecurringTemplates';
 import { FAMILY_CATEGORIES, WEEKDAY_OPTIONS } from '../features/family-calendar/constants';
-import { isEndAfterStart, isValidTimeFormat } from '../lib/dates';
+import { isValidOptionalTimeRange } from '../lib/dates';
 import type { FamilyCategory } from '../features/family-calendar/recurringOccurrences';
 
 export default function EditRecurringTemplateScreen() {
@@ -20,6 +20,7 @@ export default function EditRecurringTemplateScreen() {
   const [startTime, setStartTime] = useState('');
   const [endTime, setEndTime] = useState('');
   const [note, setNote] = useState('');
+  const [validationError, setValidationError] = useState<string | null>(null);
 
   useEffect(() => {
     if (template) {
@@ -37,9 +38,13 @@ export default function EditRecurringTemplateScreen() {
 
   const handleSave = () => {
     if (!title.trim() || !person.trim() || weekday === null) return;
-    if (!isValidTimeFormat(startTime) || !isValidTimeFormat(endTime) || !isEndAfterStart(startTime, endTime)) return;
+    if (!isValidOptionalTimeRange(startTime, endTime)) {
+      setValidationError("Orario non valido — usa il formato HH:MM con la fine dopo l'inizio.");
+      return;
+    }
+    setValidationError(null);
     updateTemplate.mutate(
-      { id: template.id, title: title.trim(), category, person: person.trim(), weekday, startTime, endTime, note: note.trim() || undefined },
+      { id: template.id, title: title.trim(), category, person: person.trim(), weekday, startTime: startTime.trim() || undefined, endTime: endTime.trim() || undefined, note: note.trim() || undefined },
       { onSuccess: () => router.back() }
     );
   };
@@ -87,6 +92,7 @@ export default function EditRecurringTemplateScreen() {
       </View>
       <TextInput style={styles.input} placeholder="Nota (opzionale)" value={note} onChangeText={setNote} />
 
+      {validationError && <Text style={styles.error}>{validationError}</Text>}
       {updateTemplate.isError && <Text style={styles.error}>{(updateTemplate.error as Error).message}</Text>}
       <Pressable style={styles.button} onPress={handleSave} disabled={updateTemplate.isPending}>
         <Text style={styles.buttonText}>Salva</Text>

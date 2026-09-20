@@ -37,6 +37,7 @@ describe('expandOccurrences', () => {
       [],
       { start: '2026-09-01', end: '2026-09-15' }
     );
+    // Martedì in questo intervallo: 1, 8, 15 settembre 2026
     expect(occurrences.map((o) => o.date)).toEqual(['2026-09-01', '2026-09-08', '2026-09-15']);
     expect(occurrences.every((o) => o.isVirtual)).toBe(true);
     expect(occurrences.every((o) => o.recurringTemplateId === 't1')).toBe(true);
@@ -117,18 +118,22 @@ describe('expandOccurrences', () => {
 
 describe('nextOccurrenceDate', () => {
   it('returns the same date when it already matches the weekday', () => {
+    // 2026-09-01 è martedì (weekday 2)
     expect(nextOccurrenceDate(2, '2026-09-01')).toBe('2026-09-01');
   });
 
   it('returns the next matching date within the following week', () => {
+    // da mercoledì (2026-09-02) al prossimo martedì è il 2026-09-08
     expect(nextOccurrenceDate(2, '2026-09-02')).toBe('2026-09-08');
   });
 
   it('wraps correctly across a month boundary', () => {
+    // 2026-09-29 è martedì; il prossimo martedì da mercoledì 2026-09-30 è il 2026-10-06
     expect(nextOccurrenceDate(2, '2026-09-30')).toBe('2026-10-06');
   });
 
   it('wraps correctly across a year boundary', () => {
+    // 2026-12-30 è mercoledì; il prossimo martedì (weekday 2) è il 2027-01-05
     expect(nextOccurrenceDate(2, '2026-12-30')).toBe('2027-01-05');
   });
 });

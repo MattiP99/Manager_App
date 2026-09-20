@@ -3,7 +3,7 @@ import { View, TextInput, Text, Pressable, StyleSheet, ScrollView } from 'react-
 import { router } from 'expo-router';
 import { useCreateRecurringTemplate } from '../features/family-calendar/useRecurringTemplates';
 import { FAMILY_CATEGORIES, WEEKDAY_OPTIONS } from '../features/family-calendar/constants';
-import { isEndAfterStart, isValidTimeFormat } from '../lib/dates';
+import { isValidTimeRange } from '../lib/dates';
 import type { FamilyCategory } from '../features/family-calendar/recurringOccurrences';
 
 export default function AddRecurringTemplateScreen() {
@@ -14,11 +14,16 @@ export default function AddRecurringTemplateScreen() {
   const [startTime, setStartTime] = useState('');
   const [endTime, setEndTime] = useState('');
   const [note, setNote] = useState('');
+  const [validationError, setValidationError] = useState<string | null>(null);
   const createTemplate = useCreateRecurringTemplate();
 
   const handleSubmit = () => {
     if (!title.trim() || !person.trim() || weekday === null) return;
-    if (!isValidTimeFormat(startTime) || !isValidTimeFormat(endTime) || !isEndAfterStart(startTime, endTime)) return;
+    if (!isValidTimeRange(startTime, endTime)) {
+      setValidationError("Orario non valido — usa il formato HH:MM con la fine dopo l'inizio.");
+      return;
+    }
+    setValidationError(null);
     createTemplate.mutate(
       { title: title.trim(), category, person: person.trim(), weekday, startTime, endTime, note: note.trim() || undefined },
       { onSuccess: () => router.back() }
@@ -64,6 +69,7 @@ export default function AddRecurringTemplateScreen() {
       </View>
       <TextInput style={styles.input} placeholder="Nota (opzionale)" value={note} onChangeText={setNote} />
 
+      {validationError && <Text style={styles.error}>{validationError}</Text>}
       {createTemplate.isError && <Text style={styles.error}>{(createTemplate.error as Error).message}</Text>}
       <Pressable style={styles.button} onPress={handleSubmit} disabled={createTemplate.isPending}>
         <Text style={styles.buttonText}>{createTemplate.isPending ? 'Salvataggio...' : 'Salva'}</Text>

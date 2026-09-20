@@ -1,4 +1,4 @@
-import { addDays, endOfMonth, isEndAfterStart, isValidTimeFormat, parseLocalDateString, shiftMonth, startOfMonth, toLocalDateString } from './dates';
+import { addDays, endOfMonth, hoursBetweenTimes, isEndAfterStart, isValidOptionalTimeRange, isValidTimeFormat, isValidTimeRange, parseLocalDateString, shiftMonth, startOfMonth, toLocalDateString } from './dates';
 
 describe('toLocalDateString', () => {
   const originalTZ = process.env.TZ;
@@ -145,5 +145,57 @@ describe('isEndAfterStart', () => {
 
   it('is false when end is before start', () => {
     expect(isEndAfterStart('10:00', '09:00')).toBe(false);
+  });
+});
+
+describe('isValidTimeRange', () => {
+  it('is true for a valid ordered range', () => {
+    expect(isValidTimeRange('09:00', '10:00')).toBe(true);
+  });
+
+  it('is false when either side has invalid format', () => {
+    expect(isValidTimeRange('9:00', '10:00')).toBe(false);
+    expect(isValidTimeRange('09:00', '10:60')).toBe(false);
+  });
+
+  it('is false when end is not after start', () => {
+    expect(isValidTimeRange('10:00', '09:00')).toBe(false);
+  });
+});
+
+describe('isValidOptionalTimeRange', () => {
+  it('is true when both are empty', () => {
+    expect(isValidOptionalTimeRange('', '')).toBe(true);
+  });
+
+  it('is true when both are empty after trimming whitespace', () => {
+    expect(isValidOptionalTimeRange('  ', '  ')).toBe(true);
+  });
+
+  it('is true for a valid ordered range', () => {
+    expect(isValidOptionalTimeRange('09:00', '10:00')).toBe(true);
+  });
+
+  it('is false when only one side is provided', () => {
+    expect(isValidOptionalTimeRange('09:00', '')).toBe(false);
+    expect(isValidOptionalTimeRange('', '10:00')).toBe(false);
+  });
+
+  it('is false for an invalid or unordered range when both are provided', () => {
+    expect(isValidOptionalTimeRange('10:00', '09:00')).toBe(false);
+  });
+});
+
+describe('hoursBetweenTimes', () => {
+  it('computes whole hours', () => {
+    expect(hoursBetweenTimes('09:00', '17:00')).toBe(8);
+  });
+
+  it('computes fractional hours', () => {
+    expect(hoursBetweenTimes('09:00', '09:30')).toBe(0.5);
+  });
+
+  it('computes a small range correctly', () => {
+    expect(hoursBetweenTimes('14:15', '14:45')).toBe(0.5);
   });
 });

@@ -9,7 +9,7 @@ import {
 } from '../features/family-calendar/useCalendarEvents';
 import { useRecurringTemplates } from '../features/family-calendar/useRecurringTemplates';
 import { FAMILY_CATEGORIES } from '../features/family-calendar/constants';
-import { isEndAfterStart, isValidTimeFormat } from '../lib/dates';
+import { isValidOptionalTimeRange } from '../lib/dates';
 import type { FamilyCategory } from '../features/family-calendar/recurringOccurrences';
 
 export default function EditFamilyEventScreen() {
@@ -32,6 +32,7 @@ export default function EditFamilyEventScreen() {
   const [endTime, setEndTime] = useState('');
   const [note, setNote] = useState('');
   const [loaded, setLoaded] = useState(false);
+  const [validationError, setValidationError] = useState<string | null>(null);
 
   useEffect(() => {
     if (loaded) return;
@@ -61,15 +62,19 @@ export default function EditFamilyEventScreen() {
 
   const handleSave = () => {
     if (!title.trim() || !person.trim()) return;
-    if (!isValidTimeFormat(startTime) || !isValidTimeFormat(endTime) || !isEndAfterStart(startTime, endTime)) return;
+    if (!isValidOptionalTimeRange(startTime, endTime)) {
+      setValidationError("Orario non valido — usa il formato HH:MM con la fine dopo l'inizio.");
+      return;
+    }
+    setValidationError(null);
     if (manualEvent) {
       updateEvent.mutate(
-        { id: manualEvent.id, title: title.trim(), category, person: person.trim(), date: manualEvent.date, startTime, endTime, note: note.trim() || undefined },
+        { id: manualEvent.id, title: title.trim(), category, person: person.trim(), date: manualEvent.date, startTime: startTime.trim() || undefined, endTime: endTime.trim() || undefined, note: note.trim() || undefined },
         { onSuccess: () => router.back() }
       );
     } else if (recurringTemplateId && date) {
       upsertOverride.mutate(
-        { recurringTemplateId, date, title: title.trim(), category, person: person.trim(), startTime, endTime, note: note.trim() || undefined, isCancelled: false },
+        { recurringTemplateId, date, title: title.trim(), category, person: person.trim(), startTime: startTime.trim() || undefined, endTime: endTime.trim() || undefined, note: note.trim() || undefined, isCancelled: false },
         { onSuccess: () => router.back() }
       );
     }
@@ -109,6 +114,7 @@ export default function EditFamilyEventScreen() {
       </View>
       <TextInput style={styles.input} placeholder="Nota (opzionale)" value={note} onChangeText={setNote} />
 
+      {validationError && <Text style={styles.error}>{validationError}</Text>}
       {error && <Text style={styles.error}>{error.message}</Text>}
       <Pressable style={styles.button} onPress={handleSave} disabled={isPending}>
         <Text style={styles.buttonText}>Salva</Text>
