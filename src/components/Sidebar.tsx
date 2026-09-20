@@ -17,7 +17,7 @@ export function Sidebar() {
         return (
           <Link key={item.key} href={item.href} asChild>
             <Pressable
-              style={[styles.item, active && styles.itemActive]}
+              style={StyleSheet.flatten([styles.item, active && styles.itemActive])}
               accessibilityRole="tab"
               accessibilityState={{ selected: active }}
             >
