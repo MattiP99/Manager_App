@@ -3,7 +3,7 @@ import { View, TextInput, Text, Pressable, StyleSheet, ScrollView } from 'react-
 import { router, useLocalSearchParams } from 'expo-router';
 import { useClients } from '../features/clients/useClients';
 import { useCreateWorkSession } from '../features/work-sessions/useWorkSessions';
-import { toLocalDateString } from '../lib/dates';
+import { isEndAfterStart, isValidTimeFormat, toLocalDateString } from '../lib/dates';
 
 export default function AddWorkSessionScreen() {
   const { clientId: preselectedClientId, date: preselectedDate } = useLocalSearchParams<{ clientId?: string; date?: string }>();
@@ -11,6 +11,8 @@ export default function AddWorkSessionScreen() {
   const [clientId, setClientId] = useState(preselectedClientId ?? '');
   const [date, setDate] = useState(preselectedDate ?? toLocalDateString(new Date()));
   const [hours, setHours] = useState('');
+  const [startTime, setStartTime] = useState('');
+  const [endTime, setEndTime] = useState('');
   const [note, setNote] = useState('');
   const createSession = useCreateWorkSession();
 
@@ -19,8 +21,9 @@ export default function AddWorkSessionScreen() {
   const handleSubmit = () => {
     const hoursNum = parseFloat(hours.replace(',', '.'));
     if (!selectedClient || isNaN(hoursNum) || hoursNum <= 0) return;
+    if (!isValidTimeFormat(startTime) || !isValidTimeFormat(endTime) || !isEndAfterStart(startTime, endTime)) return;
     createSession.mutate(
-      { clientId, date, hours: hoursNum, rateSnapshot: selectedClient.hourly_rate, note: note.trim() || undefined },
+      { clientId, date, hours: hoursNum, rateSnapshot: selectedClient.hourly_rate, startTime, endTime, note: note.trim() || undefined },
       { onSuccess: () => router.back() }
     );
   };
@@ -46,6 +49,10 @@ export default function AddWorkSessionScreen() {
 
       <TextInput style={styles.input} placeholder="Data (YYYY-MM-DD)" value={date} onChangeText={setDate} />
       <TextInput style={styles.input} placeholder="Ore lavorate" keyboardType="decimal-pad" value={hours} onChangeText={setHours} />
+      <View style={styles.timeRow}>
+        <TextInput style={[styles.input, styles.timeInput]} placeholder="Ora inizio (HH:MM)" value={startTime} onChangeText={setStartTime} />
+        <TextInput style={[styles.input, styles.timeInput]} placeholder="Ora fine (HH:MM)" value={endTime} onChangeText={setEndTime} />
+      </View>
       <TextInput style={styles.input} placeholder="Nota (opzionale)" value={note} onChangeText={setNote} />
 
       {createSession.isError && <Text style={styles.error}>{(createSession.error as Error).message}</Text>}
@@ -66,6 +73,8 @@ const styles = StyleSheet.create({
   clientOption: { borderWidth: 1, borderColor: '#ccc', borderRadius: 8, padding: 10 },
   clientOptionSelected: { backgroundColor: '#dbeafe', borderColor: '#2563eb' },
   input: { borderWidth: 1, borderColor: '#ccc', borderRadius: 8, padding: 12 },
+  timeRow: { flexDirection: 'row', gap: 8 },
+  timeInput: { flex: 1 },
   button: { backgroundColor: '#2563eb', borderRadius: 8, padding: 14, alignItems: 'center' },
   buttonText: { color: 'white', fontWeight: '600' },
   error: { color: '#dc2626' },

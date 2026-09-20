@@ -10,6 +10,8 @@ function session(overrides: Partial<WorkSession>): WorkSession {
     hours: 2,
     rate_snapshot: 10,
     amount_due: 20,
+    start_time: null,
+    end_time: null,
     note: null,
     ...overrides,
   };

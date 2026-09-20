@@ -9,6 +9,8 @@ export interface WorkSession {
   hours: number;
   rate_snapshot: number;
   amount_due: number;
+  start_time: string | null;
+  end_time: string | null;
   note: string | null;
 }
 
@@ -23,7 +25,7 @@ export function useWorkSessionsByClient(clientId: string | undefined) {
     queryFn: async (): Promise<WorkSessionStatus[]> => {
       const { data, error } = await supabase
         .from('work_session_status')
-        .select('id, client_id, date, hours, rate_snapshot, amount_due, note, status')
+        .select('id, client_id, date, hours, rate_snapshot, amount_due, start_time, end_time, note, status')
         .eq('client_id', clientId!)
         .order('date', { ascending: false })
         .order('created_at', { ascending: false });
@@ -43,7 +45,7 @@ export function useAllWorkSessions() {
     queryFn: async (): Promise<WorkSession[]> => {
       const { data, error } = await supabase
         .from('work_sessions')
-        .select('id, client_id, date, hours, rate_snapshot, amount_due, note')
+        .select('id, client_id, date, hours, rate_snapshot, amount_due, start_time, end_time, note')
         .eq('household_id', householdId!)
         .order('date', { ascending: false })
         .order('created_at', { ascending: false });
@@ -63,7 +65,7 @@ export function useAllWorkSessionsStatus() {
     queryFn: async (): Promise<WorkSessionStatus[]> => {
       const { data, error } = await supabase
         .from('work_session_status')
-        .select('id, client_id, date, hours, rate_snapshot, amount_due, note, status')
+        .select('id, client_id, date, hours, rate_snapshot, amount_due, start_time, end_time, note, status')
         .eq('household_id', householdId!)
         .order('date', { ascending: false })
         .order('created_at', { ascending: false });
@@ -82,12 +84,16 @@ export function useCreateWorkSession() {
       date,
       hours,
       rateSnapshot,
+      startTime,
+      endTime,
       note,
     }: {
       clientId: string;
       date: string;
       hours: number;
       rateSnapshot: number;
+      startTime: string;
+      endTime: string;
       note?: string;
     }) => {
       if (!household) throw new Error('No household');
@@ -99,6 +105,8 @@ export function useCreateWorkSession() {
           date,
           hours,
           rate_snapshot: rateSnapshot,
+          start_time: startTime,
+          end_time: endTime,
           note: note || null,
         })
         .select()

@@ -400,33 +400,39 @@ export type Database = {
           client_id: string
           created_at: string
           date: string
+          end_time: string | null
           hours: number
           household_id: string
           id: string
           note: string | null
           rate_snapshot: number
+          start_time: string | null
         }
         Insert: {
           amount_due?: number | null
           client_id: string
           created_at?: string
           date: string
+          end_time?: string | null
           hours: number
           household_id: string
           id?: string
           note?: string | null
           rate_snapshot: number
+          start_time?: string | null
         }
         Update: {
           amount_due?: number | null
           client_id?: string
           created_at?: string
           date?: string
+          end_time?: string | null
           hours?: number
           household_id?: string
           id?: string
           note?: string | null
           rate_snapshot?: number
+          start_time?: string | null
         }
         Relationships: [
           {
@@ -454,11 +460,13 @@ export type Database = {
           created_at: string | null
           cumulative_due: number | null
           date: string | null
+          end_time: string | null
           hours: number | null
           household_id: string | null
           id: string | null
           note: string | null
           rate_snapshot: number | null
+          start_time: string | null
           status: string | null
           total_paid: number | null
         }
