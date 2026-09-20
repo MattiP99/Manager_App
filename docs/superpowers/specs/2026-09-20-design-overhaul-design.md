@@ -25,12 +25,12 @@ Unico tema (chiaro), nessuna variante scura.
 
 | Token | Hex | Uso |
 |---|---|---|
-| `canvas` | `#F7E9C6` | Sfondo di default di ogni schermata (beige caldo) |
+| `canvas` | `#DDD0C8` | Sfondo di default di ogni schermata (beige/greige caldo) |
 | `surface` | `#FFFFFF` | Card, bottoni, input, elementi "sollevati" dal canvas |
-| `ink` | `#3F2021` | Testo primario, titoli (marrone caldo scuro invece di un nero generico — a tema con l'accento marrone) |
+| `ink` | `#323232` | Testo primario, titoli (grigio scuro neutro) |
 | `ink-muted` | `#7A6659` | Testo secondario (sottotitoli, meta-informazioni, placeholder) |
 | `hairline` | `#E6DFCF` | Bordo sottile 1px su card/input/bottoni |
-| `accent` | `#B6CADF` | Light blue — stati attivi, focus, evidenziazioni, tab/voce sidebar selezionata |
+| `accent` | `#96C2DB` | Light blue — stati attivi, focus, evidenziazioni, tab/voce sidebar selezionata |
 | `success` | `#15803D` | Stato "pagato", conferme |
 | `success-bg` | `#DCFCE7` | Sfondo badge stato "pagato" |
 | `warning` | `#B45309` | Avvisi |
@@ -38,7 +38,7 @@ Unico tema (chiaro), nessuna variante scura.
 | `error` | `#DC2626` | Errori di validazione form, azioni distruttive |
 | `error-bg` | `#FBE4E4` | Sfondo badge/banner errore |
 
-`ink` (`#3F2021`) fa doppio servizio: testo primario e, dove serve un accento "cool brown" più marcato dell'accent light-blue (icone attive, bordi in evidenza), lo stesso valore — un solo token invece di due che condividerebbero lo stesso hex.
+`ink` (`#323232`) fa doppio servizio: testo primario e, dove serve un accento scuro più marcato dell'accent light-blue (icone attive, bordi in evidenza), lo stesso valore — un solo token invece di due che condividerebbero lo stesso hex.
 
 I colori semantici (`success`/`warning`/`error`) sono **indipendenti** dalla palette brand — non derivano da `accent`/`ink` per evitare ambiguità tra "colore di stato" e "colore decorativo" (es. lo stato "non pagato" non deve sembrare un elemento di design accentato).
 
@@ -62,14 +62,14 @@ Scala minima (non la gerarchia completa da landing page dei riferimenti — l'ap
 **Bottone** — struttura ripresa dai `DESIGN.md` di riferimento (sfondo bianco, bordo hairline, `borderRadius: 8`, padding `10px 18px`) con l'aggiunta esplicita richiesta dall'utente: un'ombra morbida sotto il bottone per dare un effetto di rilievo (staccato dal canvas beige), non il trattamento flat di Intercom/Cal.com:
 
 ```ts
-shadowColor: '#3F2021',
+shadowColor: '#323232',
 shadowOffset: { width: 0, height: 2 },
 shadowOpacity: 0.12,
 shadowRadius: 6,
 elevation: 3, // Android
 ```
 
-Testo del bottone in `ink` (`#3F2021`). Nessun bottone con sfondo colorato pieno (né `accent` né `accent-strong` come *fill*) — i colori di dettaglio restano su icone, bordi attivi, badge; i bottoni restano sempre bianchi con rilievo, in ogni contesto (primario incluso — non esiste un bottone "primary" nero/blu a pieno campo come nei riferimenti web).
+Testo del bottone in `ink` (`#323232`). Nessun bottone con sfondo colorato pieno (né `accent` né `ink` come *fill*) — i colori di dettaglio restano su icone, bordi attivi, badge; i bottoni restano sempre bianchi con rilievo, in ogni contesto (primario incluso — non esiste un bottone "primary" nero/blu a pieno campo come nei riferimenti web, con l'unica eccezione delle righe di riepilogo Pagamenti in hover/pressione — vedi la spec di Blocco B).
 
 **Card** — `surface` bianco su `canvas` beige, `borderRadius: 12`, bordo hairline, nessuna ombra propria (il contrasto beige→bianco fa già il lavoro di elevazione, come nel riferimento Intercom).
 
