@@ -1,9 +1,15 @@
 import { useEffect } from 'react';
 import { Slot, useRouter, useSegments } from 'expo-router';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { Inter_400Regular, Inter_500Medium, Inter_600SemiBold, useFonts } from '@expo-google-fonts/inter';
+import * as SplashScreen from 'expo-splash-screen';
 import { useSession } from '../features/auth/useSession';
 import { useHousehold } from '../features/household/useHousehold';
 import { useSyncRecurringReminders } from '../features/family-calendar/useSyncRecurringReminders';
+
+// Deve stare a livello di modulo, mai dentro un componente/hook — altrimenti
+// può essere chiamato troppo tardi, a splash screen già nascosta (docs Expo).
+SplashScreen.preventAutoHideAsync();
 
 const queryClient = new QueryClient();
 
@@ -40,6 +46,22 @@ function AuthGate() {
 }
 
 export default function RootLayout() {
+  const [fontsLoaded, fontError] = useFonts({
+    Inter_400Regular,
+    Inter_500Medium,
+    Inter_600SemiBold,
+  });
+
+  useEffect(() => {
+    if (fontsLoaded || fontError) {
+      SplashScreen.hideAsync();
+    }
+  }, [fontsLoaded, fontError]);
+
+  if (!fontsLoaded && !fontError) {
+    return null;
+  }
+
   return (
     <QueryClientProvider client={queryClient}>
       <AuthGate />
