@@ -1,13 +1,14 @@
 import { useEffect, useState } from 'react';
-import { View, TextInput, Text, Pressable, StyleSheet } from 'react-native';
+import { Alert, View, TextInput, Text, Pressable, StyleSheet } from 'react-native';
 import { router, useLocalSearchParams } from 'expo-router';
-import { useClients, useUpdateClient } from '../features/clients/useClients';
+import { useClients, useDeleteClient, useUpdateClient } from '../features/clients/useClients';
 
 export default function EditClientScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const { data: clients } = useClients();
   const client = clients?.find((c) => c.id === id);
   const updateClient = useUpdateClient();
+  const deleteClient = useDeleteClient();
 
   const [name, setName] = useState('');
   const [hourlyRate, setHourlyRate] = useState('');
@@ -31,6 +32,21 @@ export default function EditClientScreen() {
     updateClient.mutate({ id: client.id, active: !client.active }, { onSuccess: () => router.back() });
   };
 
+  const handleDelete = () => {
+    Alert.alert(
+      'Eliminare il cliente?',
+      `Questa azione è irreversibile: eliminerà anche tutte le giornate lavorate e i pagamenti registrati per "${client.name}". Se il cliente ha solo pausato il rapporto, usa "Disattiva cliente" invece.`,
+      [
+        { text: 'Annulla', style: 'cancel' },
+        {
+          text: 'Elimina',
+          style: 'destructive',
+          onPress: () => deleteClient.mutate(client.id, { onSuccess: () => router.back() }),
+        },
+      ]
+    );
+  };
+
   return (
     <View style={styles.container}>
       <Text style={styles.title}>Modifica cliente</Text>
@@ -49,6 +65,9 @@ export default function EditClientScreen() {
       <Pressable style={styles.toggleButton} onPress={handleToggleActive} disabled={updateClient.isPending}>
         <Text style={styles.toggleButtonText}>{client.active ? 'Disattiva cliente' : 'Riattiva cliente'}</Text>
       </Pressable>
+      <Pressable style={styles.deleteButton} onPress={handleDelete} disabled={deleteClient.isPending}>
+        <Text style={styles.deleteButtonText}>Elimina cliente</Text>
+      </Pressable>
       <Pressable onPress={() => router.back()}>
         <Text style={styles.cancel}>Annulla</Text>
       </Pressable>
@@ -65,6 +84,8 @@ const styles = StyleSheet.create({
   buttonText: { color: 'white', fontWeight: '600' },
   toggleButton: { borderWidth: 1, borderColor: '#dc2626', borderRadius: 8, padding: 14, alignItems: 'center' },
   toggleButtonText: { color: '#dc2626', fontWeight: '600' },
+  deleteButton: { backgroundColor: '#dc2626', borderRadius: 8, padding: 14, alignItems: 'center' },
+  deleteButtonText: { color: 'white', fontWeight: '600' },
   error: { color: '#dc2626' },
   cancel: { textAlign: 'center', marginTop: 8 },
 });
