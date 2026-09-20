@@ -4,7 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { BottomTabBar } from './BottomTabBar';
 import { Sidebar } from './Sidebar';
 import { isWideLayout } from '../lib/layout';
-import { Colors, Spacing } from '../lib/theme';
+import { Colors } from '../lib/theme';
 
 const MAX_CONTENT_WIDTH = 1000;
 
@@ -13,14 +13,14 @@ export function AppShell() {
 
   if (isWideLayout(width)) {
     return (
-      <View style={styles.row}>
+      <SafeAreaView style={styles.row} edges={['top', 'left', 'right', 'bottom']}>
         <Sidebar />
         <View style={styles.wideContent}>
           <View style={styles.wideContentInner}>
             <Slot />
           </View>
         </View>
-      </View>
+      </SafeAreaView>
     );
   }
 
@@ -38,6 +38,6 @@ const styles = StyleSheet.create({
   row: { flex: 1, flexDirection: 'row', backgroundColor: Colors.canvas },
   column: { flex: 1, backgroundColor: Colors.canvas },
   wideContent: { flex: 1, alignItems: 'center' },
-  wideContentInner: { flex: 1, width: '100%', maxWidth: MAX_CONTENT_WIDTH, padding: Spacing.xl },
-  mobileContent: { flex: 1, padding: Spacing.lg },
+  wideContentInner: { flex: 1, width: '100%', maxWidth: MAX_CONTENT_WIDTH },
+  mobileContent: { flex: 1 },
 });

@@ -35,5 +35,6 @@ const styles = StyleSheet.create({
   },
   inputFocused: {
     borderColor: Colors.accent,
+    borderWidth: 2,
   },
 });

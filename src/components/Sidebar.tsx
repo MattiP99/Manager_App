@@ -1,10 +1,10 @@
 import { Feather } from '@expo/vector-icons';
 import { Link, usePathname } from 'expo-router';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
-import { NAV_ITEMS } from '../lib/navigation';
+import { isNavItemActive, NAV_ITEMS } from '../lib/navigation';
 import { Colors, Radii, Spacing, Typography } from '../lib/theme';
 
-export const SIDEBAR_WIDTH = 220;
+const SIDEBAR_WIDTH = 220;
 
 export function Sidebar() {
   const pathname = usePathname();
@@ -12,13 +12,17 @@ export function Sidebar() {
   return (
     <View style={styles.container}>
       {NAV_ITEMS.map((item) => {
-        const active = item.href === '/' ? pathname === '/' : pathname.startsWith(item.href);
-        const color = active ? Colors.accent : Colors.ink;
+        const active = isNavItemActive(pathname, item.href);
+        const iconColor = active ? Colors.accent : Colors.ink;
         return (
           <Link key={item.key} href={item.href} asChild>
-            <Pressable style={[styles.item, active && styles.itemActive]}>
-              <Feather name={item.icon} size={18} color={color} />
-              <Text style={[styles.label, { color }]}>{item.label}</Text>
+            <Pressable
+              style={[styles.item, active && styles.itemActive]}
+              accessibilityRole="tab"
+              accessibilityState={{ selected: active }}
+            >
+              <Feather name={item.icon} size={18} color={iconColor} />
+              <Text style={styles.label}>{item.label}</Text>
             </Pressable>
           </Link>
         );
@@ -50,5 +54,6 @@ const styles = StyleSheet.create({
   },
   label: {
     ...Typography.bodyBold,
+    color: Colors.ink,
   },
 });

@@ -14,3 +14,8 @@ export const NAV_ITEMS: NavItem[] = [
   { key: 'note', href: '/note', label: 'Note', icon: 'lock' },
   { key: 'impostazioni', href: '/impostazioni', label: 'Impostazioni', icon: 'settings' },
 ];
+
+export function isNavItemActive(pathname: string, href: NavItem['href']): boolean {
+  if (href === '/') return pathname === '/';
+  return pathname === href || pathname.startsWith(`${href}/`);
+}

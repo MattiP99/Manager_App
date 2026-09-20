@@ -2,7 +2,7 @@ import { Feather } from '@expo/vector-icons';
 import { Link, usePathname } from 'expo-router';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { NAV_ITEMS } from '../lib/navigation';
+import { isNavItemActive, NAV_ITEMS } from '../lib/navigation';
 import { Colors, Spacing, Typography } from '../lib/theme';
 
 export function BottomTabBar() {
@@ -12,13 +12,18 @@ export function BottomTabBar() {
   return (
     <View style={[styles.container, { paddingBottom: Math.max(insets.bottom, Spacing.sm) }]}>
       {NAV_ITEMS.map((item) => {
-        const active = item.href === '/' ? pathname === '/' : pathname.startsWith(item.href);
-        const color = active ? Colors.accent : Colors.inkMuted;
+        const active = isNavItemActive(pathname, item.href);
+        const iconColor = active ? Colors.accent : Colors.inkMuted;
+        const labelColor = active ? Colors.ink : Colors.inkMuted;
         return (
           <Link key={item.key} href={item.href} asChild>
-            <Pressable style={styles.tab}>
-              <Feather name={item.icon} size={20} color={color} />
-              <Text style={[styles.label, { color }]}>{item.label}</Text>
+            <Pressable
+              style={styles.tab}
+              accessibilityRole="tab"
+              accessibilityState={{ selected: active }}
+            >
+              <Feather name={item.icon} size={20} color={iconColor} />
+              <Text style={[styles.label, { color: labelColor }]}>{item.label}</Text>
             </Pressable>
           </Link>
         );
