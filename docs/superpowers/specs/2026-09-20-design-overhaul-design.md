@@ -25,12 +25,12 @@ Unico tema (chiaro), nessuna variante scura.
 
 | Token | Hex | Uso |
 |---|---|---|
-| `canvas` | `#F5F1EC` | Sfondo di default di ogni schermata (beige/crema caldo) |
+| `canvas` | `#F7E9C6` | Sfondo di default di ogni schermata (beige caldo) |
 | `surface` | `#FFFFFF` | Card, bottoni, input, elementi "sollevati" dal canvas |
 | `ink` | `#3F2021` | Testo primario, titoli (marrone caldo scuro invece di un nero generico — a tema con l'accento marrone) |
 | `ink-muted` | `#7A6659` | Testo secondario (sottotitoli, meta-informazioni, placeholder) |
 | `hairline` | `#E6DFCF` | Bordo sottile 1px su card/input/bottoni |
-| `accent` | `#A4C8E1` | Light blue — stati attivi, focus, evidenziazioni, tab/voce sidebar selezionata |
+| `accent` | `#B6CADF` | Light blue — stati attivi, focus, evidenziazioni, tab/voce sidebar selezionata |
 | `success` | `#15803D` | Stato "pagato", conferme |
 | `success-bg` | `#DCFCE7` | Sfondo badge stato "pagato" |
 | `warning` | `#B45309` | Avvisi |

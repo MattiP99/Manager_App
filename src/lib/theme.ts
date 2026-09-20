@@ -1,10 +1,10 @@
 export const Colors = {
-  canvas: '#F5F1EC',
+  canvas: '#F7E9C6',
   surface: '#FFFFFF',
   ink: '#3F2021',
   inkMuted: '#7A6659',
   hairline: '#E6DFCF',
-  accent: '#A4C8E1',
+  accent: '#B6CADF',
   success: '#15803D',
   successBg: '#DCFCE7',
   warning: '#B45309',

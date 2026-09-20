@@ -96,7 +96,7 @@ Ogni cella del mese (già esistente in `CalendarView`, non nel nuovo `TimeGridVi
 ### 3.4 Colori dei blocchi occupati
 
 Una "maschera leggermente colorata" (overlay semi-trasparente sul rettangolo bianco, non un riempimento pieno) — un solo colore per sezione, non uno per categoria (deciso con l'utente):
-- Lavoro: overlay `rgba(164, 200, 225, 0.35)` (tint di `accent`).
+- Lavoro: overlay `rgba(182, 202, 223, 0.35)` (tint di `accent`).
 - Francesca: overlay `rgba(63, 32, 33, 0.15)` (tint di `ink`, alpha più basso perché `ink` è un colore scuro — a parità di leggerezza percepita).
 
 Questi due valori sono nuovi token in `src/lib/theme.ts` (`Colors.workBlockOverlay`, `Colors.familyBlockOverlay`), non calcolati a runtime.
