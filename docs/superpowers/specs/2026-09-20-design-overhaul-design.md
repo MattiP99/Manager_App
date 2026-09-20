@@ -86,7 +86,7 @@ Sostituzione del navigatore `<Tabs>` di Expo Router (oggi in `src/app/(tabs)/_la
 - **Larghezza < 820px (mobile):** tab bar in basso, le 5 sezioni esistenti (Calendario/Pagamenti/Spese/Note/Impostazioni).
 - **Larghezza ≥ 820px (tablet/web):** sidebar laterale fissa con le stesse 5 sezioni, contenuto centrato con larghezza massima (`maxWidth` ~1000px) per non stirare i form su schermi larghi.
 
-Icone (`@expo/vector-icons`, famiglia Feather — già presente in `node_modules`, nessuna nuova dipendenza):
+Icone (`@expo/vector-icons`, famiglia Feather — aggiunta come nuova dipendenza diretta durante l'implementazione, Task 3):
 
 | Sezione | Icona Feather |
 |---|---|
@@ -98,7 +98,7 @@ Icone (`@expo/vector-icons`, famiglia Feather — già presente in `node_modules
 
 Voce attiva (tab o riga sidebar) evidenziata con `accent` su icona/testo.
 
-Il breakpoint sostituisce solo il *contenitore* di navigazione — non cambia la limitazione nota già documentata in `PROGRESS.md` (stato locale perso su `<Slot />` senza `Stack` quando si naviga via e si torna): resta un limite noto, non nello scope di questo redesign.
+Il breakpoint sostituisce solo il *contenitore* di navigazione, ma questo blocco allarga il perimetro della limitazione nota già documentata in `PROGRESS.md` (quirk #8, stato locale perso su `<Slot />` senza `Stack`): prima riguardava solo "navigare via e tornare indietro", ora riguarda anche "cambiare tab e tornare indietro", perché il vecchio navigatore `<Tabs>` teneva montate tutte e 5 le schermate contemporaneamente mentre il nuovo shell basato su `Slot` monta solo la route attiva. La correzione reale (spostare i filtri interessati — es. il filtro periodo di `pagamenti.tsx`, il navigatore mese di `spese.tsx`, il toggle Lavoro/Francesca di `index.tsx` — su URL search params, già indicata come fix del quirk #8) resta rimandata al blocco futuro che toccherà quelle schermate specifiche, non a questo blocco A.
 
 ## 7. Struttura file (convenzioni esistenti, non un mirror di Grapes)
 
