@@ -7,7 +7,8 @@ function template(overrides: Partial<RecurringTemplate>): RecurringTemplate {
     category: 'piscina',
     person: 'Francesca',
     weekday: 2, // martedì (2026-09-01 è martedì)
-    time: '17:00',
+    start_time: '17:00',
+    end_time: '17:30',
     note: null,
     ...overrides,
   };
@@ -21,7 +22,8 @@ function event(overrides: Partial<CalendarEvent>): CalendarEvent {
     category: 'altro',
     person: 'Francesca',
     date: '2026-09-01',
-    time: null,
+    start_time: null,
+    end_time: null,
     note: null,
     is_cancelled: false,
     ...overrides,
@@ -35,7 +37,6 @@ describe('expandOccurrences', () => {
       [],
       { start: '2026-09-01', end: '2026-09-15' }
     );
-    // Martedì in questo intervallo: 1, 8, 15 settembre 2026
     expect(occurrences.map((o) => o.date)).toEqual(['2026-09-01', '2026-09-08', '2026-09-15']);
     expect(occurrences.every((o) => o.isVirtual)).toBe(true);
     expect(occurrences.every((o) => o.recurringTemplateId === 't1')).toBe(true);
@@ -44,12 +45,13 @@ describe('expandOccurrences', () => {
   it('a single exception overrides the fields of one occurrence without affecting others', () => {
     const occurrences = expandOccurrences(
       [template({ weekday: 2 })],
-      [event({ id: 'override1', recurring_template_id: 't1', date: '2026-09-08', title: 'Piscina (orario speciale)', time: '19:00' })],
+      [event({ id: 'override1', recurring_template_id: 't1', date: '2026-09-08', title: 'Piscina (orario speciale)', start_time: '19:00', end_time: '19:30' })],
       { start: '2026-09-01', end: '2026-09-15' }
     );
     const overridden = occurrences.find((o) => o.date === '2026-09-08')!;
     expect(overridden.title).toBe('Piscina (orario speciale)');
-    expect(overridden.time).toBe('19:00');
+    expect(overridden.start_time).toBe('19:00');
+    expect(overridden.end_time).toBe('19:30');
     expect(overridden.isVirtual).toBe(false);
     expect(overridden.id).toBe('override1');
 
@@ -73,7 +75,7 @@ describe('expandOccurrences', () => {
       [event({ id: 'manual1', recurring_template_id: null, date: '2026-09-08', title: 'Visita medica' })],
       { start: '2026-09-01', end: '2026-09-08' }
     );
-    expect(occurrences).toHaveLength(3); // 2 virtuali (1, 8 sett) + 1 manuale (8 sett)
+    expect(occurrences).toHaveLength(3);
     const manual = occurrences.find((o) => o.id === 'manual1')!;
     expect(manual.recurringTemplateId).toBeNull();
     expect(manual.isVirtual).toBe(false);
@@ -89,13 +91,13 @@ describe('expandOccurrences', () => {
     expect(occurrences).toEqual([]);
   });
 
-  it('sorts results by date then by time', () => {
+  it('sorts results by date then by start time', () => {
     const occurrences = expandOccurrences(
       [],
       [
-        event({ id: 'e-late', date: '2026-09-08', time: '18:00' }),
-        event({ id: 'e-early', date: '2026-09-08', time: '09:00' }),
-        event({ id: 'e-prev-day', date: '2026-09-01', time: '10:00' }),
+        event({ id: 'e-late', date: '2026-09-08', start_time: '18:00', end_time: '18:30' }),
+        event({ id: 'e-early', date: '2026-09-08', start_time: '09:00', end_time: '09:30' }),
+        event({ id: 'e-prev-day', date: '2026-09-01', start_time: '10:00', end_time: '10:30' }),
       ],
       { start: '2026-09-01', end: '2026-09-15' }
     );
@@ -115,22 +117,18 @@ describe('expandOccurrences', () => {
 
 describe('nextOccurrenceDate', () => {
   it('returns the same date when it already matches the weekday', () => {
-    // 2026-09-01 è martedì (weekday 2)
     expect(nextOccurrenceDate(2, '2026-09-01')).toBe('2026-09-01');
   });
 
   it('returns the next matching date within the following week', () => {
-    // da mercoledì (2026-09-02) al prossimo martedì è il 2026-09-08
     expect(nextOccurrenceDate(2, '2026-09-02')).toBe('2026-09-08');
   });
 
   it('wraps correctly across a month boundary', () => {
-    // 2026-09-29 è martedì; il prossimo martedì da mercoledì 2026-09-30 è il 2026-10-06
     expect(nextOccurrenceDate(2, '2026-09-30')).toBe('2026-10-06');
   });
 
   it('wraps correctly across a year boundary', () => {
-    // 2026-12-30 è mercoledì; il prossimo martedì (weekday 2) è il 2027-01-05
     expect(nextOccurrenceDate(2, '2026-12-30')).toBe('2027-01-05');
   });
 });

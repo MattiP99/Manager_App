@@ -9,7 +9,8 @@ export interface RecurringTemplate {
   person: string;
   /** Date.getDay() convention: 0 = Domenica ... 6 = Sabato. */
   weekday: number;
-  time: string | null;
+  start_time: string | null;
+  end_time: string | null;
   note: string | null;
 }
 
@@ -20,7 +21,8 @@ export interface CalendarEvent {
   category: FamilyCategory;
   person: string;
   date: string;
-  time: string | null;
+  start_time: string | null;
+  end_time: string | null;
   note: string | null;
   is_cancelled: boolean;
 }
@@ -32,7 +34,8 @@ export interface Occurrence {
   title: string;
   category: FamilyCategory;
   person: string;
-  time: string | null;
+  start_time: string | null;
+  end_time: string | null;
   note: string | null;
   /** true se non esiste ancora una riga calendar_events reale per questa occorrenza. */
   isVirtual: boolean;
@@ -71,7 +74,8 @@ export function expandOccurrences(
             title: override.title,
             category: override.category,
             person: override.person,
-            time: override.time,
+            start_time: override.start_time,
+            end_time: override.end_time,
             note: override.note,
             isVirtual: false,
           });
@@ -86,7 +90,8 @@ export function expandOccurrences(
         title: template.title,
         category: template.category,
         person: template.person,
-        time: template.time,
+        start_time: template.start_time,
+        end_time: template.end_time,
         note: template.note,
         isVirtual: true,
       });
@@ -104,7 +109,8 @@ export function expandOccurrences(
       title: e.title,
       category: e.category,
       person: e.person,
-      time: e.time,
+      start_time: e.start_time,
+      end_time: e.end_time,
       note: e.note,
       isVirtual: false,
     });
@@ -112,8 +118,8 @@ export function expandOccurrences(
 
   occurrences.sort((a, b) => {
     if (a.date !== b.date) return a.date < b.date ? -1 : 1;
-    const at = a.time ?? '';
-    const bt = b.time ?? '';
+    const at = a.start_time ?? '';
+    const bt = b.start_time ?? '';
     return at < bt ? -1 : at > bt ? 1 : 0;
   });
 

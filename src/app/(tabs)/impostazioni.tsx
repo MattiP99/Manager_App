@@ -62,7 +62,7 @@ export default function ImpostazioniScreen() {
               onPress={() => router.push({ pathname: '/edit-recurring-template', params: { id: item.id } })}
             >
               <Text style={styles.clientName}>{item.title} — {item.person}</Text>
-              <Text>{weekdayLabel(item.weekday)}{item.time ? ` ${item.time}` : ''}</Text>
+              <Text>{weekdayLabel(item.weekday)}{item.start_time && item.end_time ? ` ${item.start_time}–${item.end_time}` : ''}</Text>
             </Pressable>
           )}
           ListEmptyComponent={<Text>Nessun impegno ricorrente ancora.</Text>}

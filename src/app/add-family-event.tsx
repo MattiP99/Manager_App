@@ -3,7 +3,7 @@ import { View, TextInput, Text, Pressable, StyleSheet, ScrollView } from 'react-
 import { router, useLocalSearchParams } from 'expo-router';
 import { useCreateCalendarEvent } from '../features/family-calendar/useCalendarEvents';
 import { FAMILY_CATEGORIES } from '../features/family-calendar/constants';
-import { toLocalDateString } from '../lib/dates';
+import { isEndAfterStart, isValidTimeFormat, toLocalDateString } from '../lib/dates';
 import type { FamilyCategory } from '../features/family-calendar/recurringOccurrences';
 
 export default function AddFamilyEventScreen() {
@@ -12,14 +12,16 @@ export default function AddFamilyEventScreen() {
   const [category, setCategory] = useState<FamilyCategory>('altro');
   const [person, setPerson] = useState('Francesca');
   const [date, setDate] = useState(preselectedDate ?? toLocalDateString(new Date()));
-  const [time, setTime] = useState('');
+  const [startTime, setStartTime] = useState('');
+  const [endTime, setEndTime] = useState('');
   const [note, setNote] = useState('');
   const createEvent = useCreateCalendarEvent();
 
   const handleSubmit = () => {
     if (!title.trim() || !person.trim() || !date.trim()) return;
+    if (!isValidTimeFormat(startTime) || !isValidTimeFormat(endTime) || !isEndAfterStart(startTime, endTime)) return;
     createEvent.mutate(
-      { title: title.trim(), category, person: person.trim(), date: date.trim(), time: time.trim() || undefined, note: note.trim() || undefined },
+      { title: title.trim(), category, person: person.trim(), date: date.trim(), startTime, endTime, note: note.trim() || undefined },
       { onSuccess: () => router.back() }
     );
   };
@@ -44,7 +46,10 @@ export default function AddFamilyEventScreen() {
 
       <TextInput style={styles.input} placeholder="Persona" value={person} onChangeText={setPerson} />
       <TextInput style={styles.input} placeholder="Data (YYYY-MM-DD)" value={date} onChangeText={setDate} />
-      <TextInput style={styles.input} placeholder="Orario (HH:MM, opzionale)" value={time} onChangeText={setTime} />
+      <View style={styles.timeRow}>
+        <TextInput style={[styles.input, styles.timeInput]} placeholder="Ora inizio (HH:MM)" value={startTime} onChangeText={setStartTime} />
+        <TextInput style={[styles.input, styles.timeInput]} placeholder="Ora fine (HH:MM)" value={endTime} onChangeText={setEndTime} />
+      </View>
       <TextInput style={styles.input} placeholder="Nota (opzionale)" value={note} onChangeText={setNote} />
 
       {createEvent.isError && <Text style={styles.error}>{(createEvent.error as Error).message}</Text>}
@@ -66,6 +71,8 @@ const styles = StyleSheet.create({
   optionsRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   option: { borderWidth: 1, borderColor: '#ccc', borderRadius: 8, paddingVertical: 8, paddingHorizontal: 12 },
   optionSelected: { backgroundColor: '#dbeafe', borderColor: '#2563eb' },
+  timeRow: { flexDirection: 'row', gap: 8 },
+  timeInput: { flex: 1 },
   button: { backgroundColor: '#2563eb', borderRadius: 8, padding: 14, alignItems: 'center' },
   buttonText: { color: 'white', fontWeight: '600' },
   error: { color: '#dc2626' },

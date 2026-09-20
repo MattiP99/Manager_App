@@ -15,7 +15,7 @@ export function useRecurringTemplates() {
     queryFn: async (): Promise<RecurringTemplate[]> => {
       const { data, error } = await supabase
         .from('recurring_templates')
-        .select('id, title, category, person, weekday, time, note')
+        .select('id, title, category, person, weekday, start_time, end_time, note')
         .eq('household_id', householdId!)
         .order('weekday', { ascending: true })
         .order('id', { ascending: true });
@@ -34,7 +34,8 @@ export function useCreateRecurringTemplate() {
       category: FamilyCategory;
       person: string;
       weekday: number;
-      time?: string;
+      startTime?: string;
+      endTime?: string;
       note?: string;
     }) => {
       if (!household) throw new Error('No household');
@@ -46,10 +47,11 @@ export function useCreateRecurringTemplate() {
           category: input.category,
           person: input.person,
           weekday: input.weekday,
-          time: input.time || null,
+          start_time: input.startTime || null,
+          end_time: input.endTime || null,
           note: input.note || null,
         })
-        .select('id, title, category, person, weekday, time, note')
+        .select('id, title, category, person, weekday, start_time, end_time, note')
         .single();
       if (error) throw error;
       return data;
@@ -67,7 +69,8 @@ export function useUpdateRecurringTemplate() {
       category: FamilyCategory;
       person: string;
       weekday: number;
-      time?: string;
+      startTime?: string;
+      endTime?: string;
       note?: string;
     }) => {
       const { data: current } = await supabase
@@ -83,11 +86,12 @@ export function useUpdateRecurringTemplate() {
           category: input.category,
           person: input.person,
           weekday: input.weekday,
-          time: input.time || null,
+          start_time: input.startTime || null,
+          end_time: input.endTime || null,
           note: input.note || null,
         })
         .eq('id', input.id)
-        .select('id, title, category, person, weekday, time, note')
+        .select('id, title, category, person, weekday, start_time, end_time, note')
         .single();
       if (error) throw error;
 

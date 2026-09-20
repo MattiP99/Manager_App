@@ -3,6 +3,7 @@ import { View, TextInput, Text, Pressable, StyleSheet, ScrollView } from 'react-
 import { router, useLocalSearchParams } from 'expo-router';
 import { useDeleteRecurringTemplate, useRecurringTemplates, useUpdateRecurringTemplate } from '../features/family-calendar/useRecurringTemplates';
 import { FAMILY_CATEGORIES, WEEKDAY_OPTIONS } from '../features/family-calendar/constants';
+import { isEndAfterStart, isValidTimeFormat } from '../lib/dates';
 import type { FamilyCategory } from '../features/family-calendar/recurringOccurrences';
 
 export default function EditRecurringTemplateScreen() {
@@ -16,7 +17,8 @@ export default function EditRecurringTemplateScreen() {
   const [category, setCategory] = useState<FamilyCategory>('altro');
   const [person, setPerson] = useState('');
   const [weekday, setWeekday] = useState<number | null>(null);
-  const [time, setTime] = useState('');
+  const [startTime, setStartTime] = useState('');
+  const [endTime, setEndTime] = useState('');
   const [note, setNote] = useState('');
 
   useEffect(() => {
@@ -25,7 +27,8 @@ export default function EditRecurringTemplateScreen() {
       setCategory(template.category);
       setPerson(template.person);
       setWeekday(template.weekday);
-      setTime(template.time ?? '');
+      setStartTime(template.start_time ?? '');
+      setEndTime(template.end_time ?? '');
       setNote(template.note ?? '');
     }
   }, [template?.id]);
@@ -34,8 +37,9 @@ export default function EditRecurringTemplateScreen() {
 
   const handleSave = () => {
     if (!title.trim() || !person.trim() || weekday === null) return;
+    if (!isValidTimeFormat(startTime) || !isValidTimeFormat(endTime) || !isEndAfterStart(startTime, endTime)) return;
     updateTemplate.mutate(
-      { id: template.id, title: title.trim(), category, person: person.trim(), weekday, time: time.trim() || undefined, note: note.trim() || undefined },
+      { id: template.id, title: title.trim(), category, person: person.trim(), weekday, startTime, endTime, note: note.trim() || undefined },
       { onSuccess: () => router.back() }
     );
   };
@@ -77,7 +81,10 @@ export default function EditRecurringTemplateScreen() {
         ))}
       </View>
 
-      <TextInput style={styles.input} placeholder="Orario (HH:MM, opzionale)" value={time} onChangeText={setTime} />
+      <View style={styles.timeRow}>
+        <TextInput style={[styles.input, styles.timeInput]} placeholder="Ora inizio (HH:MM)" value={startTime} onChangeText={setStartTime} />
+        <TextInput style={[styles.input, styles.timeInput]} placeholder="Ora fine (HH:MM)" value={endTime} onChangeText={setEndTime} />
+      </View>
       <TextInput style={styles.input} placeholder="Nota (opzionale)" value={note} onChangeText={setNote} />
 
       {updateTemplate.isError && <Text style={styles.error}>{(updateTemplate.error as Error).message}</Text>}
@@ -103,6 +110,8 @@ const styles = StyleSheet.create({
   optionsRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   option: { borderWidth: 1, borderColor: '#ccc', borderRadius: 8, paddingVertical: 8, paddingHorizontal: 12 },
   optionSelected: { backgroundColor: '#dbeafe', borderColor: '#2563eb' },
+  timeRow: { flexDirection: 'row', gap: 8 },
+  timeInput: { flex: 1 },
   button: { backgroundColor: '#2563eb', borderRadius: 8, padding: 14, alignItems: 'center' },
   buttonText: { color: 'white', fontWeight: '600' },
   deleteButton: { borderWidth: 1, borderColor: '#dc2626', borderRadius: 8, padding: 14, alignItems: 'center' },

@@ -32,7 +32,7 @@ export function useSyncRecurringReminders() {
           continue;
         }
 
-        syncReminderFor(`template:${template.id}`, `Promemoria: ${template.title}`, `${template.person} — domani`, nextDate, template.time);
+        syncReminderFor(`template:${template.id}`, `Promemoria: ${template.title}`, `${template.person} — domani`, nextDate, template.start_time);
       }
     };
 

@@ -14,7 +14,7 @@ export function useAllCalendarEvents() {
     queryFn: async (): Promise<CalendarEvent[]> => {
       const { data, error } = await supabase
         .from('calendar_events')
-        .select('id, recurring_template_id, title, category, person, date, time, note, is_cancelled')
+        .select('id, recurring_template_id, title, category, person, date, start_time, end_time, note, is_cancelled')
         .eq('household_id', householdId!)
         .order('date', { ascending: false })
         .order('created_at', { ascending: false });
@@ -33,7 +33,8 @@ export function useCreateCalendarEvent() {
       category: FamilyCategory;
       person: string;
       date: string;
-      time?: string;
+      startTime?: string;
+      endTime?: string;
       note?: string;
     }) => {
       if (!household) throw new Error('No household');
@@ -46,17 +47,18 @@ export function useCreateCalendarEvent() {
           category: input.category,
           person: input.person,
           date: input.date,
-          time: input.time || null,
+          start_time: input.startTime || null,
+          end_time: input.endTime || null,
           note: input.note || null,
         })
-        .select('id, recurring_template_id, title, category, person, date, time, note, is_cancelled')
+        .select('id, recurring_template_id, title, category, person, date, start_time, end_time, note, is_cancelled')
         .single();
       if (error) throw error;
       return data as CalendarEvent;
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['calendar-events'] });
-      syncReminderFor(`event:${data.id}`, `Promemoria: ${data.title}`, `${data.person} — domani`, data.date, data.time);
+      syncReminderFor(`event:${data.id}`, `Promemoria: ${data.title}`, `${data.person} — domani`, data.date, data.start_time);
     },
   });
 }
@@ -70,7 +72,8 @@ export function useUpdateCalendarEvent() {
       category: FamilyCategory;
       person: string;
       date: string;
-      time?: string;
+      startTime?: string;
+      endTime?: string;
       note?: string;
     }) => {
       const { data, error } = await supabase
@@ -80,18 +83,19 @@ export function useUpdateCalendarEvent() {
           category: input.category,
           person: input.person,
           date: input.date,
-          time: input.time || null,
+          start_time: input.startTime || null,
+          end_time: input.endTime || null,
           note: input.note || null,
         })
         .eq('id', input.id)
-        .select('id, recurring_template_id, title, category, person, date, time, note, is_cancelled')
+        .select('id, recurring_template_id, title, category, person, date, start_time, end_time, note, is_cancelled')
         .single();
       if (error) throw error;
       return data as CalendarEvent;
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['calendar-events'] });
-      syncReminderFor(`event:${data.id}`, `Promemoria: ${data.title}`, `${data.person} — domani`, data.date, data.time);
+      syncReminderFor(`event:${data.id}`, `Promemoria: ${data.title}`, `${data.person} — domani`, data.date, data.start_time);
     },
   });
 }
@@ -122,7 +126,8 @@ export function useUpsertOccurrenceOverride() {
       title: string;
       category: FamilyCategory;
       person: string;
-      time?: string;
+      startTime?: string;
+      endTime?: string;
       note?: string;
       isCancelled: boolean;
     }) => {
@@ -137,13 +142,14 @@ export function useUpsertOccurrenceOverride() {
             title: input.title,
             category: input.category,
             person: input.person,
-            time: input.time || null,
+            start_time: input.startTime || null,
+            end_time: input.endTime || null,
             note: input.note || null,
             is_cancelled: input.isCancelled,
           },
           { onConflict: 'recurring_template_id,date' }
         )
-        .select('id, recurring_template_id, title, category, person, date, time, note, is_cancelled')
+        .select('id, recurring_template_id, title, category, person, date, start_time, end_time, note, is_cancelled')
         .single();
       if (error) throw error;
       return data as CalendarEvent;
@@ -153,7 +159,7 @@ export function useUpsertOccurrenceOverride() {
       if (data.is_cancelled) {
         cancelReminderFor(`event:${data.id}`);
       } else {
-        syncReminderFor(`event:${data.id}`, `Promemoria: ${data.title}`, `${data.person} — domani`, data.date, data.time);
+        syncReminderFor(`event:${data.id}`, `Promemoria: ${data.title}`, `${data.person} — domani`, data.date, data.start_time);
       }
     },
   });

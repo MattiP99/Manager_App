@@ -44,39 +44,42 @@ export type Database = {
           category: string
           created_at: string
           date: string
+          end_time: string | null
           household_id: string
           id: string
           is_cancelled: boolean
           note: string | null
           person: string
           recurring_template_id: string | null
-          time: string | null
+          start_time: string | null
           title: string
         }
         Insert: {
           category: string
           created_at?: string
           date: string
+          end_time?: string | null
           household_id: string
           id?: string
           is_cancelled?: boolean
           note?: string | null
           person: string
           recurring_template_id?: string | null
-          time?: string | null
+          start_time?: string | null
           title: string
         }
         Update: {
           category?: string
           created_at?: string
           date?: string
+          end_time?: string | null
           household_id?: string
           id?: string
           is_cancelled?: boolean
           note?: string | null
           person?: string
           recurring_template_id?: string | null
-          time?: string | null
+          start_time?: string | null
           title?: string
         }
         Relationships: [
@@ -354,33 +357,36 @@ export type Database = {
         Row: {
           category: string
           created_at: string
+          end_time: string | null
           household_id: string
           id: string
           note: string | null
           person: string
-          time: string | null
+          start_time: string | null
           title: string
           weekday: number
         }
         Insert: {
           category: string
           created_at?: string
+          end_time?: string | null
           household_id: string
           id?: string
           note?: string | null
           person: string
-          time?: string | null
+          start_time?: string | null
           title: string
           weekday: number
         }
         Update: {
           category?: string
           created_at?: string
+          end_time?: string | null
           household_id?: string
           id?: string
           note?: string | null
           person?: string
-          time?: string | null
+          start_time?: string | null
           title?: string
           weekday?: number
         }

@@ -23,7 +23,8 @@ export default function FamilyDayDetailScreen() {
       title: occurrence.title,
       category: occurrence.category,
       person: occurrence.person,
-      time: occurrence.time ?? undefined,
+      startTime: occurrence.start_time ?? undefined,
+      endTime: occurrence.end_time ?? undefined,
       note: occurrence.note ?? undefined,
       isCancelled: true,
     });
@@ -53,7 +54,10 @@ export default function FamilyDayDetailScreen() {
               }
             >
               <Text style={styles.rowTitle}>{item.title} — {item.person}</Text>
-              <Text style={styles.rowMeta}>{categoryLabel(item.category)}{item.time ? ` · ${item.time}` : ''}</Text>
+              <Text style={styles.rowMeta}>
+                {categoryLabel(item.category)}
+                {item.start_time && item.end_time ? ` · ${item.start_time}–${item.end_time}` : ''}
+              </Text>
             </Pressable>
             {item.recurringTemplateId && (
               <Pressable onPress={() => handleSkip(item)} disabled={skipOccurrence.isPending}>

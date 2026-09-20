@@ -9,6 +9,7 @@ import {
 } from '../features/family-calendar/useCalendarEvents';
 import { useRecurringTemplates } from '../features/family-calendar/useRecurringTemplates';
 import { FAMILY_CATEGORIES } from '../features/family-calendar/constants';
+import { isEndAfterStart, isValidTimeFormat } from '../lib/dates';
 import type { FamilyCategory } from '../features/family-calendar/recurringOccurrences';
 
 export default function EditFamilyEventScreen() {
@@ -27,7 +28,8 @@ export default function EditFamilyEventScreen() {
   const [title, setTitle] = useState('');
   const [category, setCategory] = useState<FamilyCategory>('altro');
   const [person, setPerson] = useState('');
-  const [time, setTime] = useState('');
+  const [startTime, setStartTime] = useState('');
+  const [endTime, setEndTime] = useState('');
   const [note, setNote] = useState('');
   const [loaded, setLoaded] = useState(false);
 
@@ -37,7 +39,8 @@ export default function EditFamilyEventScreen() {
       setTitle(manualEvent.title);
       setCategory(manualEvent.category);
       setPerson(manualEvent.person);
-      setTime(manualEvent.time ?? '');
+      setStartTime(manualEvent.start_time ?? '');
+      setEndTime(manualEvent.end_time ?? '');
       setNote(manualEvent.note ?? '');
       setLoaded(true);
     } else if (isOverrideMode && (existingOverride || template)) {
@@ -45,7 +48,8 @@ export default function EditFamilyEventScreen() {
       setTitle(source.title);
       setCategory(source.category);
       setPerson(source.person);
-      setTime(source.time ?? '');
+      setStartTime(source.start_time ?? '');
+      setEndTime(source.end_time ?? '');
       setNote(source.note ?? '');
       setLoaded(true);
     }
@@ -57,14 +61,15 @@ export default function EditFamilyEventScreen() {
 
   const handleSave = () => {
     if (!title.trim() || !person.trim()) return;
+    if (!isValidTimeFormat(startTime) || !isValidTimeFormat(endTime) || !isEndAfterStart(startTime, endTime)) return;
     if (manualEvent) {
       updateEvent.mutate(
-        { id: manualEvent.id, title: title.trim(), category, person: person.trim(), date: manualEvent.date, time: time.trim() || undefined, note: note.trim() || undefined },
+        { id: manualEvent.id, title: title.trim(), category, person: person.trim(), date: manualEvent.date, startTime, endTime, note: note.trim() || undefined },
         { onSuccess: () => router.back() }
       );
     } else if (recurringTemplateId && date) {
       upsertOverride.mutate(
-        { recurringTemplateId, date, title: title.trim(), category, person: person.trim(), time: time.trim() || undefined, note: note.trim() || undefined, isCancelled: false },
+        { recurringTemplateId, date, title: title.trim(), category, person: person.trim(), startTime, endTime, note: note.trim() || undefined, isCancelled: false },
         { onSuccess: () => router.back() }
       );
     }
@@ -98,7 +103,10 @@ export default function EditFamilyEventScreen() {
       </View>
 
       <TextInput style={styles.input} placeholder="Persona" value={person} onChangeText={setPerson} />
-      <TextInput style={styles.input} placeholder="Orario (HH:MM, opzionale)" value={time} onChangeText={setTime} />
+      <View style={styles.timeRow}>
+        <TextInput style={[styles.input, styles.timeInput]} placeholder="Ora inizio (HH:MM)" value={startTime} onChangeText={setStartTime} />
+        <TextInput style={[styles.input, styles.timeInput]} placeholder="Ora fine (HH:MM)" value={endTime} onChangeText={setEndTime} />
+      </View>
       <TextInput style={styles.input} placeholder="Nota (opzionale)" value={note} onChangeText={setNote} />
 
       {error && <Text style={styles.error}>{error.message}</Text>}
@@ -126,6 +134,8 @@ const styles = StyleSheet.create({
   optionsRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   option: { borderWidth: 1, borderColor: '#ccc', borderRadius: 8, paddingVertical: 8, paddingHorizontal: 12 },
   optionSelected: { backgroundColor: '#dbeafe', borderColor: '#2563eb' },
+  timeRow: { flexDirection: 'row', gap: 8 },
+  timeInput: { flex: 1 },
   button: { backgroundColor: '#2563eb', borderRadius: 8, padding: 14, alignItems: 'center' },
   buttonText: { color: 'white', fontWeight: '600' },
   deleteButton: { borderWidth: 1, borderColor: '#dc2626', borderRadius: 8, padding: 14, alignItems: 'center' },
