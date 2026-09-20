@@ -417,7 +417,7 @@ git commit -m "feat: add start/end time to work sessions, required on new entrie
 ### Task 3: Orari impegni di Francesca (`recurring_templates`/`calendar_events`)
 
 **Files:**
-- Create: `supabase/migrations/0010_family_time_ranges.sql`
+- Create: `supabase/migrations/0011_family_time_ranges.sql`
 - Modify: `src/lib/database.types.ts` (rigenerato dalla CLI)
 - Modify: `src/features/family-calendar/recurringOccurrences.ts`
 - Modify: `src/features/family-calendar/recurringOccurrences.test.ts`
@@ -437,7 +437,7 @@ git commit -m "feat: add start/end time to work sessions, required on new entrie
 
 Questo task è un unico rename (`time` → `start_time`+`end_time`) che attraversa tipi, hook, e 5 schermate/form contemporaneamente — non è divisibile in task più piccoli senza lasciare `tsc` rotto a metà, perché ogni file che referenzia `.time` su queste interfacce smette di compilare nello stesso istante in cui il tipo cambia. Va eseguito e verificato come un blocco unico.
 
-- [ ] **Step 1: Scrivi la migrazione `supabase/migrations/0010_family_time_ranges.sql`**
+- [ ] **Step 1: Scrivi la migrazione `supabase/migrations/0011_family_time_ranges.sql`**
 
 ```sql
 -- Sostituisce il singolo campo `time` con un intervallo start_time/end_time
@@ -486,7 +486,7 @@ npx supabase db push
 npx supabase migration list
 ```
 
-Expected: `0010_family_time_ranges.sql` applicata, `migration list` allineato fino a `0010`.
+Expected: `0011_family_time_ranges.sql` applicata, `migration list` allineato fino a `0011` (0010 è la migrazione di refresh della view `work_session_status` aggiunta durante il Task 2, per far propagare le nuove colonne di `work_sessions` — vedi ledger SDD).
 
 - [ ] **Step 3: Rigenera i tipi TypeScript**
 
@@ -1853,7 +1853,7 @@ Conferma che: ogni form (`add-family-event.tsx`, `edit-family-event.tsx`, `add-r
 - [ ] **Step 19: Commit**
 
 ```bash
-git add supabase/migrations/0010_family_time_ranges.sql src/lib/database.types.ts src/features/family-calendar src/app/add-family-event.tsx src/app/edit-family-event.tsx src/app/add-recurring-template.tsx src/app/edit-recurring-template.tsx "src/app/family-day/[date].tsx" "src/app/(tabs)/impostazioni.tsx"
+git add supabase/migrations/0011_family_time_ranges.sql src/lib/database.types.ts src/features/family-calendar src/app/add-family-event.tsx src/app/edit-family-event.tsx src/app/add-recurring-template.tsx src/app/edit-recurring-template.tsx "src/app/family-day/[date].tsx" "src/app/(tabs)/impostazioni.tsx"
 git commit -m "feat: replace single time field with start/end time range for family calendar"
 ```
 
