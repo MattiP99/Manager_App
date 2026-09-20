@@ -31,3 +31,11 @@ export function shiftMonth(dateStr: string, direction: 1 | -1): string {
   const d = parseLocalDateString(dateStr);
   return toLocalDateString(new Date(d.getFullYear(), d.getMonth() + direction, 1));
 }
+
+export function isValidTimeFormat(value: string): boolean {
+  return /^([01]\d|2[0-3]):[0-5]\d$/.test(value);
+}
+
+export function isEndAfterStart(start: string, end: string): boolean {
+  return end > start;
+}

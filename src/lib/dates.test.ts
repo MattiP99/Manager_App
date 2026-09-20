@@ -1,4 +1,4 @@
-import { addDays, endOfMonth, parseLocalDateString, shiftMonth, startOfMonth, toLocalDateString } from './dates';
+import { addDays, endOfMonth, isEndAfterStart, isValidTimeFormat, parseLocalDateString, shiftMonth, startOfMonth, toLocalDateString } from './dates';
 
 describe('toLocalDateString', () => {
   const originalTZ = process.env.TZ;
@@ -97,5 +97,53 @@ describe('shiftMonth', () => {
 
   it('rolls backward across a year boundary', () => {
     expect(shiftMonth('2026-01-15', -1)).toBe('2025-12-01');
+  });
+});
+
+describe('isValidTimeFormat', () => {
+  it('accepts a valid zero-padded time', () => {
+    expect(isValidTimeFormat('09:30')).toBe(true);
+  });
+
+  it('accepts the last valid hour/minute', () => {
+    expect(isValidTimeFormat('23:59')).toBe(true);
+  });
+
+  it('accepts midnight', () => {
+    expect(isValidTimeFormat('00:00')).toBe(true);
+  });
+
+  it('rejects an hour of 24 or more', () => {
+    expect(isValidTimeFormat('24:00')).toBe(false);
+  });
+
+  it('rejects a minute of 60 or more', () => {
+    expect(isValidTimeFormat('09:60')).toBe(false);
+  });
+
+  it('rejects a non-zero-padded hour', () => {
+    expect(isValidTimeFormat('9:30')).toBe(false);
+  });
+
+  it('rejects garbage input', () => {
+    expect(isValidTimeFormat('not a time')).toBe(false);
+  });
+
+  it('rejects an empty string', () => {
+    expect(isValidTimeFormat('')).toBe(false);
+  });
+});
+
+describe('isEndAfterStart', () => {
+  it('is true when end is later than start', () => {
+    expect(isEndAfterStart('09:00', '10:00')).toBe(true);
+  });
+
+  it('is false when end equals start', () => {
+    expect(isEndAfterStart('09:00', '09:00')).toBe(false);
+  });
+
+  it('is false when end is before start', () => {
+    expect(isEndAfterStart('10:00', '09:00')).toBe(false);
   });
 });
