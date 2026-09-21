@@ -11,6 +11,9 @@ export const Colors = {
   warningBg: '#FEF3C7',
   error: '#DC2626',
   errorBg: '#FBE4E4',
+  morningTint: 'rgba(150, 194, 219, 0.20)',
+  afternoonTint: 'rgba(50, 50, 50, 0.08)',
+  actionBrown: '#4D424C',
 } as const;
 
 export const Fonts = {

@@ -1,4 +1,5 @@
 import type { FamilyCategory } from './recurringOccurrences';
+import { Colors } from '../../lib/theme';
 
 export const FAMILY_CATEGORIES: { value: FamilyCategory; label: string }[] = [
   { value: 'mensa', label: 'Mensa' },
@@ -22,3 +23,12 @@ export const WEEKDAY_OPTIONS: { value: number; label: string }[] = [
   { value: 6, label: 'Sab' },
   { value: 0, label: 'Dom' },
 ];
+
+export const FAMILY_CATEGORY_COLORS: Record<FamilyCategory, string> = {
+  mensa: '#65b5ff',
+  palestra: '#0bdf50',
+  cavallo: '#ff2067',
+  piscina: '#b3e01c',
+  teatro: '#03b2cb',
+  altro: Colors.inkMuted,
+};
