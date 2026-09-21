@@ -3,6 +3,7 @@ import { router } from 'expo-router';
 import { Button } from '../../components/Button';
 import { FAMILY_CATEGORIES, FAMILY_CATEGORY_COLORS } from './constants';
 import type { Occurrence } from './recurringOccurrences';
+import { toShortTime } from '../../lib/dates';
 import { Colors, Spacing, Typography } from '../../lib/theme';
 
 interface FamilyOccurrenceDetailProps {
@@ -30,7 +31,7 @@ export function FamilyOccurrenceDetail({ occurrence }: FamilyOccurrenceDetailPro
       <Text style={styles.title}>{occurrence.title}</Text>
       <Text style={styles.meta}>{occurrence.person}</Text>
       {occurrence.start_time && occurrence.end_time && (
-        <Text style={styles.meta}>{occurrence.start_time}–{occurrence.end_time}</Text>
+        <Text style={styles.meta}>{toShortTime(occurrence.start_time)}–{toShortTime(occurrence.end_time)}</Text>
       )}
       {occurrence.note && <Text style={styles.note}>{occurrence.note}</Text>}
       <Button label="Modifica" onPress={handleEdit} />

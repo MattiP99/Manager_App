@@ -9,7 +9,7 @@ import {
 } from '../features/family-calendar/useCalendarEvents';
 import { useRecurringTemplates } from '../features/family-calendar/useRecurringTemplates';
 import { FAMILY_CATEGORIES } from '../features/family-calendar/constants';
-import { isValidOptionalTimeRange } from '../lib/dates';
+import { isValidOptionalTimeRange, toShortTime } from '../lib/dates';
 import type { FamilyCategory } from '../features/family-calendar/recurringOccurrences';
 
 export default function EditFamilyEventScreen() {
@@ -40,8 +40,8 @@ export default function EditFamilyEventScreen() {
       setTitle(manualEvent.title);
       setCategory(manualEvent.category);
       setPerson(manualEvent.person);
-      setStartTime(manualEvent.start_time ?? '');
-      setEndTime(manualEvent.end_time ?? '');
+      setStartTime(manualEvent.start_time ? toShortTime(manualEvent.start_time) : '');
+      setEndTime(manualEvent.end_time ? toShortTime(manualEvent.end_time) : '');
       setNote(manualEvent.note ?? '');
       setLoaded(true);
     } else if (isOverrideMode && (existingOverride || template)) {
@@ -49,8 +49,8 @@ export default function EditFamilyEventScreen() {
       setTitle(source.title);
       setCategory(source.category);
       setPerson(source.person);
-      setStartTime(source.start_time ?? '');
-      setEndTime(source.end_time ?? '');
+      setStartTime(source.start_time ? toShortTime(source.start_time) : '');
+      setEndTime(source.end_time ? toShortTime(source.end_time) : '');
       setNote(source.note ?? '');
       setLoaded(true);
     }

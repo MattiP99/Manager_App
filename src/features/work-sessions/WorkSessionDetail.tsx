@@ -3,6 +3,7 @@ import { StyleSheet, Text, TextInput, View } from 'react-native';
 import { Button } from '../../components/Button';
 import { useUpdateWorkSession } from './useWorkSessions';
 import type { WorkSessionStatus } from './useWorkSessions';
+import { toShortTime } from '../../lib/dates';
 import { Colors, Radii, Spacing, Typography } from '../../lib/theme';
 
 interface WorkSessionDetailProps {
@@ -23,7 +24,7 @@ export function WorkSessionDetail({ session, clientName }: WorkSessionDetailProp
       <Text style={styles.clientName}>{clientName}</Text>
       <Text style={styles.meta}>
         {session.hours}h — €{session.amount_due.toFixed(2)}
-        {session.start_time && session.end_time ? ` — ${session.start_time}–${session.end_time}` : ''}
+        {session.start_time && session.end_time ? ` — ${toShortTime(session.start_time)}–${toShortTime(session.end_time)}` : ''}
       </Text>
       <Text style={styles.label}>Nota</Text>
       <TextInput

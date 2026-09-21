@@ -7,6 +7,7 @@ import type { WorkSessionStatus } from '../../features/work-sessions/useWorkSess
 import { WorkSessionDetail } from '../../features/work-sessions/WorkSessionDetail';
 import { DetailModal } from '../../components/DetailModal';
 import { formatDayLabel } from '../../features/calendar/calendarGrid';
+import { toShortTime } from '../../lib/dates';
 import { Colors, Radii, Spacing, Typography } from '../../lib/theme';
 
 export default function DayDetailScreen() {
@@ -34,7 +35,7 @@ export default function DayDetailScreen() {
             <Text style={styles.clientName}>{clientName(item.client_id)}</Text>
             <Text style={styles.meta}>
               {item.hours}h — €{item.amount_due.toFixed(2)}
-              {item.start_time && item.end_time ? ` — ${item.start_time}–${item.end_time}` : ''}
+              {item.start_time && item.end_time ? ` — ${toShortTime(item.start_time)}–${toShortTime(item.end_time)}` : ''}
             </Text>
             {item.note && <Text style={styles.note}>{item.note}</Text>}
           </Pressable>

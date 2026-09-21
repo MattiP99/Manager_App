@@ -32,6 +32,11 @@ export function shiftMonth(dateStr: string, direction: 1 | -1): string {
   return toLocalDateString(new Date(d.getFullYear(), d.getMonth() + direction, 1));
 }
 
+/** Postgres `time` columns round-trip through Supabase as "HH:MM:SS" (seconds included) even when only "HH:MM" was ever written — this strips the trailing seconds for display and for re-populating an HH:MM form field. */
+export function toShortTime(value: string): string {
+  return value.slice(0, 5);
+}
+
 export function isValidTimeFormat(value: string): boolean {
   return /^([01]\d|2[0-3]):[0-5]\d$/.test(value);
 }

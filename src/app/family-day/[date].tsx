@@ -9,6 +9,7 @@ import { FamilyOccurrenceDetail } from '../../features/family-calendar/FamilyOcc
 import { DetailModal } from '../../components/DetailModal';
 import { formatDayLabel } from '../../features/calendar/calendarGrid';
 import { FAMILY_CATEGORIES, FAMILY_CATEGORY_COLORS } from '../../features/family-calendar/constants';
+import { toShortTime } from '../../lib/dates';
 import { Colors, Radii, Spacing, Typography } from '../../lib/theme';
 
 export default function FamilyDayDetailScreen() {
@@ -56,7 +57,7 @@ export default function FamilyDayDetailScreen() {
               </View>
               <Text style={styles.rowMeta}>
                 {categoryLabel(item.category)}
-                {item.start_time && item.end_time ? ` · ${item.start_time}–${item.end_time}` : ''}
+                {item.start_time && item.end_time ? ` · ${toShortTime(item.start_time)}–${toShortTime(item.end_time)}` : ''}
               </Text>
             </Pressable>
             {item.recurringTemplateId && (

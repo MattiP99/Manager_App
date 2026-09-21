@@ -3,7 +3,7 @@ import { View, TextInput, Text, Pressable, StyleSheet, ScrollView } from 'react-
 import { router, useLocalSearchParams } from 'expo-router';
 import { useDeleteRecurringTemplate, useRecurringTemplates, useUpdateRecurringTemplate } from '../features/family-calendar/useRecurringTemplates';
 import { FAMILY_CATEGORIES, WEEKDAY_OPTIONS } from '../features/family-calendar/constants';
-import { isValidOptionalTimeRange } from '../lib/dates';
+import { isValidOptionalTimeRange, toShortTime } from '../lib/dates';
 import type { FamilyCategory } from '../features/family-calendar/recurringOccurrences';
 
 export default function EditRecurringTemplateScreen() {
@@ -28,8 +28,8 @@ export default function EditRecurringTemplateScreen() {
       setCategory(template.category);
       setPerson(template.person);
       setWeekday(template.weekday);
-      setStartTime(template.start_time ?? '');
-      setEndTime(template.end_time ?? '');
+      setStartTime(template.start_time ? toShortTime(template.start_time) : '');
+      setEndTime(template.end_time ? toShortTime(template.end_time) : '');
       setNote(template.note ?? '');
     }
   }, [template?.id]);

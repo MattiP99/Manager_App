@@ -6,6 +6,7 @@ import { useClients } from '../../features/clients/useClients';
 import { useRecurringTemplates } from '../../features/family-calendar/useRecurringTemplates';
 import { WEEKDAY_OPTIONS } from '../../features/family-calendar/constants';
 import { clearStoredKey } from '../../features/notes/crypto/secureKeyStore';
+import { toShortTime } from '../../lib/dates';
 
 export default function ImpostazioniScreen() {
   const { data: household, isLoading } = useHousehold();
@@ -62,7 +63,7 @@ export default function ImpostazioniScreen() {
               onPress={() => router.push({ pathname: '/edit-recurring-template', params: { id: item.id } })}
             >
               <Text style={styles.clientName}>{item.title} — {item.person}</Text>
-              <Text>{weekdayLabel(item.weekday)}{item.start_time && item.end_time ? ` ${item.start_time}–${item.end_time}` : ''}</Text>
+              <Text>{weekdayLabel(item.weekday)}{item.start_time && item.end_time ? ` ${toShortTime(item.start_time)}–${toShortTime(item.end_time)}` : ''}</Text>
             </Pressable>
           )}
           ListEmptyComponent={<Text>Nessun impegno ricorrente ancora.</Text>}

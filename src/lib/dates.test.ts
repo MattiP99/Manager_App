@@ -1,4 +1,4 @@
-import { addDays, endOfMonth, hoursBetweenTimes, isEndAfterStart, isValidOptionalTimeRange, isValidTimeFormat, isValidTimeRange, parseLocalDateString, shiftMonth, startOfMonth, toLocalDateString } from './dates';
+import { addDays, endOfMonth, hoursBetweenTimes, isEndAfterStart, isValidOptionalTimeRange, isValidTimeFormat, isValidTimeRange, parseLocalDateString, shiftMonth, startOfMonth, toLocalDateString, toShortTime } from './dates';
 
 describe('toLocalDateString', () => {
   const originalTZ = process.env.TZ;
@@ -97,6 +97,16 @@ describe('shiftMonth', () => {
 
   it('rolls backward across a year boundary', () => {
     expect(shiftMonth('2026-01-15', -1)).toBe('2025-12-01');
+  });
+});
+
+describe('toShortTime', () => {
+  it('strips trailing seconds from a Postgres time string', () => {
+    expect(toShortTime('08:00:00')).toBe('08:00');
+  });
+
+  it('leaves an already-short HH:MM string unchanged', () => {
+    expect(toShortTime('08:00')).toBe('08:00');
   });
 });
 

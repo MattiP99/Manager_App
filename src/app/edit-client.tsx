@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Alert, View, TextInput, Text, Pressable, StyleSheet } from 'react-native';
+import { Alert, Platform, View, TextInput, Text, Pressable, StyleSheet } from 'react-native';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useClients, useDeleteClient, useUpdateClient } from '../features/clients/useClients';
 
@@ -33,18 +33,21 @@ export default function EditClientScreen() {
   };
 
   const handleDelete = () => {
-    Alert.alert(
-      'Eliminare il cliente?',
-      `Questa azione è irreversibile: eliminerà anche tutte le giornate lavorate e i pagamenti registrati per "${client.name}". Se il cliente ha solo pausato il rapporto, usa "Disattiva cliente" invece.`,
-      [
-        { text: 'Annulla', style: 'cancel' },
-        {
-          text: 'Elimina',
-          style: 'destructive',
-          onPress: () => deleteClient.mutate(client.id, { onSuccess: () => router.back() }),
-        },
-      ]
-    );
+    const message = `Questa azione è irreversibile: eliminerà anche tutte le giornate lavorate e i pagamenti registrati per "${client.name}". Se il cliente ha solo pausato il rapporto, usa "Disattiva cliente" invece.`;
+    const confirmDelete = () => deleteClient.mutate(client.id, { onSuccess: () => router.back() });
+
+    // react-native-web's Alert.alert is a complete no-op (no dialog, no
+    // callbacks ever fire) — window.confirm is the real cross-platform
+    // fix, not a workaround: it's the native browser confirm dialog.
+    if (Platform.OS === 'web') {
+      if (window.confirm(`Eliminare il cliente?\n\n${message}`)) confirmDelete();
+      return;
+    }
+
+    Alert.alert('Eliminare il cliente?', message, [
+      { text: 'Annulla', style: 'cancel' },
+      { text: 'Elimina', style: 'destructive', onPress: confirmDelete },
+    ]);
   };
 
   return (
