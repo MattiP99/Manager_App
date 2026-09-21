@@ -1,21 +1,27 @@
+import { useState } from 'react';
 import { View, Text, Pressable, StyleSheet, FlatList } from 'react-native';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useRecurringTemplates } from '../../features/family-calendar/useRecurringTemplates';
 import { useAllCalendarEvents, useUpsertOccurrenceOverride } from '../../features/family-calendar/useCalendarEvents';
 import { expandOccurrences } from '../../features/family-calendar/recurringOccurrences';
+import type { Occurrence } from '../../features/family-calendar/recurringOccurrences';
+import { FamilyOccurrenceDetail } from '../../features/family-calendar/FamilyOccurrenceDetail';
+import { DetailModal } from '../../components/DetailModal';
 import { formatDayLabel } from '../../features/calendar/calendarGrid';
-import { FAMILY_CATEGORIES } from '../../features/family-calendar/constants';
+import { FAMILY_CATEGORIES, FAMILY_CATEGORY_COLORS } from '../../features/family-calendar/constants';
+import { Colors, Radii, Spacing, Typography } from '../../lib/theme';
 
 export default function FamilyDayDetailScreen() {
   const { date } = useLocalSearchParams<{ date: string }>();
   const { data: templates } = useRecurringTemplates();
   const { data: events } = useAllCalendarEvents();
   const skipOccurrence = useUpsertOccurrenceOverride();
+  const [selectedOccurrence, setSelectedOccurrence] = useState<Occurrence | null>(null);
 
   const occurrences = expandOccurrences(templates ?? [], events ?? [], { start: date, end: date });
   const categoryLabel = (value: string) => FAMILY_CATEGORIES.find((c) => c.value === value)?.label ?? value;
 
-  const handleSkip = (occurrence: (typeof occurrences)[number]) => {
+  const handleSkip = (occurrence: Occurrence) => {
     if (!occurrence.recurringTemplateId) return;
     skipOccurrence.mutate({
       recurringTemplateId: occurrence.recurringTemplateId,
@@ -43,17 +49,11 @@ export default function FamilyDayDetailScreen() {
         keyExtractor={(o) => o.id}
         renderItem={({ item }) => (
           <View style={styles.row}>
-            <Pressable
-              style={styles.rowMain}
-              onPress={() =>
-                router.push(
-                  item.recurringTemplateId
-                    ? { pathname: '/edit-family-event', params: { recurringTemplateId: item.recurringTemplateId, date: item.date } }
-                    : { pathname: '/edit-family-event', params: { id: item.id } }
-                )
-              }
-            >
-              <Text style={styles.rowTitle}>{item.title} — {item.person}</Text>
+            <Pressable style={styles.rowMain} onPress={() => setSelectedOccurrence(item)}>
+              <View style={styles.rowTitleRow}>
+                <View style={[styles.categoryDot, { backgroundColor: FAMILY_CATEGORY_COLORS[item.category] }]} />
+                <Text style={styles.rowTitle}>{item.title} — {item.person}</Text>
+              </View>
               <Text style={styles.rowMeta}>
                 {categoryLabel(item.category)}
                 {item.start_time && item.end_time ? ` · ${item.start_time}–${item.end_time}` : ''}
@@ -69,20 +69,21 @@ export default function FamilyDayDetailScreen() {
         ListEmptyComponent={<Text>Nessun impegno in questo giorno.</Text>}
       />
 
-      <Pressable
-        style={styles.addButton}
-        onPress={() => router.push({ pathname: '/add-family-event', params: { date } })}
-      >
+      <Pressable style={styles.addButton} onPress={() => router.push({ pathname: '/add-family-event', params: { date } })}>
         <Text style={styles.addButtonText}>+ Evento</Text>
       </Pressable>
+
+      <DetailModal visible={!!selectedOccurrence} onClose={() => setSelectedOccurrence(null)}>
+        {selectedOccurrence && <FamilyOccurrenceDetail occurrence={selectedOccurrence} />}
+      </DetailModal>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, padding: 24, gap: 8 },
-  back: { color: '#2563eb', marginBottom: 8 },
-  title: { fontSize: 22, fontWeight: '600' },
+  container: { flex: 1, padding: Spacing.lg, gap: Spacing.sm, backgroundColor: Colors.canvas },
+  back: { color: Colors.ink, marginBottom: Spacing.xs },
+  title: { ...Typography.title, color: Colors.ink },
   row: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -90,12 +91,22 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     paddingHorizontal: 8,
     borderBottomWidth: 1,
-    borderBottomColor: '#eee',
+    borderBottomColor: Colors.hairline,
   },
   rowMain: { flex: 1 },
-  rowTitle: { fontWeight: '600' },
-  rowMeta: { color: '#6b7280' },
-  skipLink: { color: '#dc2626', marginLeft: 8 },
-  addButton: { backgroundColor: '#2563eb', borderRadius: 8, padding: 14, alignItems: 'center', marginTop: 12 },
-  addButtonText: { color: 'white', fontWeight: '600' },
+  rowTitleRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.xs },
+  categoryDot: { width: 8, height: 8, borderRadius: 4 },
+  rowTitle: { ...Typography.bodyBold, color: Colors.ink },
+  rowMeta: { ...Typography.small, color: Colors.inkMuted },
+  skipLink: { color: Colors.error, marginLeft: Spacing.sm },
+  addButton: {
+    backgroundColor: Colors.actionBrown,
+    borderRadius: Radii.sm,
+    paddingVertical: Spacing.xl,
+    paddingHorizontal: Spacing.lg,
+    alignItems: 'center',
+    alignSelf: 'center',
+    marginTop: Spacing.md,
+  },
+  addButtonText: { ...Typography.bodyBold, color: Colors.surface },
 });
