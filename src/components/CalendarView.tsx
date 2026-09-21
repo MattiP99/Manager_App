@@ -13,6 +13,7 @@ import {
   weekdayShortLabel,
 } from '../features/calendar/calendarGrid';
 import { parseLocalDateString, toLocalDateString } from '../lib/dates';
+import { Colors, Radii, Typography } from '../lib/theme';
 
 const VIEW_LABELS: Record<CalendarViewMode, string> = { day: 'Giorno', week: 'Settimana', month: 'Mese' };
 
@@ -97,19 +98,40 @@ export function CalendarView({ initialView = 'week', renderDay, onDayPress }: Ca
 const styles = StyleSheet.create({
   container: { gap: 8 },
   modeRow: { flexDirection: 'row', gap: 8 },
-  modeButton: { flex: 1, borderWidth: 1, borderColor: '#ccc', borderRadius: 8, padding: 8, alignItems: 'center' },
-  modeButtonActive: { backgroundColor: '#dbeafe', borderColor: '#2563eb' },
-  modeText: { color: '#374151' },
-  modeTextActive: { color: '#2563eb', fontWeight: '600' },
+  modeButton: {
+    flex: 1,
+    backgroundColor: Colors.surface,
+    borderWidth: 1,
+    borderColor: Colors.hairline,
+    borderRadius: Radii.sm,
+    padding: 8,
+    alignItems: 'center',
+    shadowColor: Colors.ink,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.12,
+    shadowRadius: 6,
+    elevation: 3,
+  },
+  modeButtonActive: { borderColor: Colors.accent },
+  modeText: { ...Typography.body, color: Colors.inkMuted },
+  modeTextActive: { ...Typography.bodyBold, color: Colors.ink },
   navRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   navButton: { padding: 8, minWidth: 36, alignItems: 'center' },
-  navButtonText: { fontSize: 20, fontWeight: '600' },
-  periodLabel: { fontSize: 16, fontWeight: '600' },
+  navButtonText: { fontSize: 20, fontWeight: '600', color: Colors.ink },
+  periodLabel: { ...Typography.bodyBold, color: Colors.ink },
   weekdayHeaderRow: { flexDirection: 'row', gap: 4 },
-  weekdayHeaderText: { flex: 1, textAlign: 'center', fontSize: 12, color: '#6b7280' },
+  weekdayHeaderText: { flex: 1, textAlign: 'center', ...Typography.caption, color: Colors.inkMuted },
   weekRow: { flexDirection: 'row', gap: 4 },
-  dayCell: { flex: 1, minHeight: 56, borderRadius: 6, borderWidth: 1, borderColor: '#eee', padding: 4, overflow: 'hidden' },
+  dayCell: {
+    flex: 1,
+    minHeight: 72,
+    borderRadius: Radii.md,
+    borderWidth: 1,
+    borderColor: Colors.accent,
+    backgroundColor: Colors.surface,
+    padding: 4,
+  },
   dayCellDimmed: { opacity: 0.4 },
-  weekdayLabel: { fontSize: 10, color: '#6b7280', textAlign: 'center' },
-  dayNumber: { fontSize: 13, fontWeight: '600', textAlign: 'center' },
+  weekdayLabel: { fontSize: 10, color: Colors.inkMuted, textAlign: 'center' },
+  dayNumber: { fontSize: 13, fontWeight: '600', textAlign: 'center', color: Colors.ink },
 });
