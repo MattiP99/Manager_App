@@ -37,6 +37,13 @@ export function toShortTime(value: string): string {
   return value.slice(0, 5);
 }
 
+/** Formato compatto per spazi stretti (chip del calendario mobile): niente zero iniziale sull'ora, niente minuti quando sono :00. Precondition: "HH:MM" (vedi toShortTime). */
+export function formatCompactHour(time: string): string {
+  const [hh, mm] = time.split(':');
+  const hour = String(Number(hh));
+  return mm === '00' ? hour : `${hour}:${mm}`;
+}
+
 export function isValidTimeFormat(value: string): boolean {
   return /^([01]\d|2[0-3]):[0-5]\d$/.test(value);
 }

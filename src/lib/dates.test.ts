@@ -1,4 +1,4 @@
-import { addDays, endOfMonth, hoursBetweenTimes, isEndAfterStart, isValidOptionalTimeRange, isValidTimeFormat, isValidTimeRange, parseLocalDateString, shiftMonth, startOfMonth, toLocalDateString, toShortTime } from './dates';
+import { addDays, endOfMonth, formatCompactHour, hoursBetweenTimes, isEndAfterStart, isValidOptionalTimeRange, isValidTimeFormat, isValidTimeRange, parseLocalDateString, shiftMonth, startOfMonth, toLocalDateString, toShortTime } from './dates';
 
 describe('toLocalDateString', () => {
   const originalTZ = process.env.TZ;
@@ -107,6 +107,24 @@ describe('toShortTime', () => {
 
   it('leaves an already-short HH:MM string unchanged', () => {
     expect(toShortTime('08:00')).toBe('08:00');
+  });
+});
+
+describe('formatCompactHour', () => {
+  it('strips a leading zero and :00 minutes', () => {
+    expect(formatCompactHour('08:00')).toBe('8');
+  });
+
+  it('keeps a two-digit hour unchanged when minutes are :00', () => {
+    expect(formatCompactHour('13:00')).toBe('13');
+  });
+
+  it('keeps non-zero minutes, still stripping the leading zero on the hour', () => {
+    expect(formatCompactHour('08:30')).toBe('8:30');
+  });
+
+  it('renders midnight as a bare 0', () => {
+    expect(formatCompactHour('00:00')).toBe('0');
   });
 });
 

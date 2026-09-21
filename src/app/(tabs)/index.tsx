@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import type { ReactNode } from 'react';
-import { Platform, View, Text, StyleSheet, ScrollView, Pressable } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, Pressable } from 'react-native';
 import { router } from 'expo-router';
 import { CalendarView } from '../../components/CalendarView';
 import type { CalendarViewMode } from '../../features/calendar/calendarGrid';
@@ -17,16 +17,24 @@ import type { Occurrence } from '../../features/family-calendar/recurringOccurre
 import { FamilyOccurrenceDetail } from '../../features/family-calendar/FamilyOccurrenceDetail';
 import { FAMILY_CATEGORY_COLORS } from '../../features/family-calendar/constants';
 import { splitByHalfDay } from '../../features/calendar/dayHalves';
-import { addDays, toLocalDateString, toShortTime } from '../../lib/dates';
+import { addDays, formatCompactHour, toLocalDateString, toShortTime } from '../../lib/dates';
 import { Colors, Radii, Spacing, Typography } from '../../lib/theme';
 
 type CalendarSection = 'lavoro' | 'francesca';
 
-// Solo web, e solo su Giorno/Settimana (non Mese): le celle sono molto più
-// grandi lì (vedi CalendarView), quindi anche i chip al loro interno
-// scalano di conseguenza — Mese resta compatto.
+// Giorno/Settimana sono sempre "spaziosi" ora, su qualunque piattaforma
+// (vedi CalendarView: boost di larghezza/altezza su desktop, impilamento
+// verticale/riempimento pagina su mobile) — i chip al loro interno
+// scalano di conseguenza. Solo Mese resta compatto ovunque.
 function isBigChip(view: CalendarViewMode): boolean {
-  return Platform.OS === 'web' && view !== 'month';
+  return view !== 'month';
+}
+
+// Fuori dalla vista "big" (solo Mese) lo spazio è stretto: niente
+// "HH:MM–HH:MM" completo, solo l'essenziale (es. "8-13", "8:30-11:30").
+function formatChipTimeRange(start: string, end: string, big: boolean): string {
+  if (big) return `${toShortTime(start)}–${toShortTime(end)}`;
+  return `${formatCompactHour(toShortTime(start))}-${formatCompactHour(toShortTime(end))}`;
 }
 
 function WorkChip({ session, clientName, onPress, big }: { session: WorkSessionStatus; clientName: string; onPress: () => void; big: boolean }) {
@@ -43,9 +51,15 @@ function WorkChip({ session, clientName, onPress, big }: { session: WorkSessionS
         onPress();
       }}
     >
-      <View style={[styles.chipDot, big && styles.chipDotBig, { backgroundColor: Colors.accent }]} />
-      <Text style={[styles.chipText, big && styles.chipTextBig]} numberOfLines={1}>
-        {session.start_time && session.end_time ? `${toShortTime(session.start_time)}–${toShortTime(session.end_time)} ` : ''}
+      <View style={styles.chipTimeRow}>
+        <View style={[styles.chipDot, big && styles.chipDotBig, { backgroundColor: Colors.accent }]} />
+        {session.start_time && session.end_time && (
+          <Text style={[styles.chipTime, big && styles.chipTimeBig]} numberOfLines={1}>
+            {formatChipTimeRange(session.start_time, session.end_time, big)}
+          </Text>
+        )}
+      </View>
+      <Text style={[styles.chipName, big && styles.chipNameBig]} numberOfLines={1}>
         {clientName}
       </Text>
     </Pressable>
@@ -61,9 +75,15 @@ function FamilyChip({ occurrence, onPress, big }: { occurrence: Occurrence; onPr
         onPress();
       }}
     >
-      <View style={[styles.chipDot, big && styles.chipDotBig, { backgroundColor: FAMILY_CATEGORY_COLORS[occurrence.category] }]} />
-      <Text style={[styles.chipText, big && styles.chipTextBig]} numberOfLines={1}>
-        {occurrence.start_time && occurrence.end_time ? `${toShortTime(occurrence.start_time)}–${toShortTime(occurrence.end_time)} ` : ''}
+      <View style={styles.chipTimeRow}>
+        <View style={[styles.chipDot, big && styles.chipDotBig, { backgroundColor: FAMILY_CATEGORY_COLORS[occurrence.category] }]} />
+        {occurrence.start_time && occurrence.end_time && (
+          <Text style={[styles.chipTime, big && styles.chipTimeBig]} numberOfLines={1}>
+            {formatChipTimeRange(occurrence.start_time, occurrence.end_time, big)}
+          </Text>
+        )}
+      </View>
+      <Text style={[styles.chipName, big && styles.chipNameBig]} numberOfLines={1}>
         {occurrence.title}
       </Text>
     </Pressable>
@@ -207,9 +227,17 @@ const styles = StyleSheet.create({
   halves: { flexGrow: 1, flexBasis: 'auto', gap: 2 },
   half: { flexGrow: 1, flexBasis: 'auto', minHeight: 20, borderRadius: Radii.sm, padding: 2, gap: 2 },
   halfDivider: { height: 1, backgroundColor: Colors.hairline },
-  chip: { flexDirection: 'row', alignItems: 'center', gap: 4 },
+  // Orario e nome su righe separate (non più una singola riga troncata)
+  // così entrambi restano leggibili invece di tagliarsi a vicenda in uno
+  // spazio stretto. Il font mobile (non "big") è ridotto di un punto
+  // rispetto a prima per compensare lo spazio verticale in più che due
+  // righe per chip richiedono su una cella piccola.
+  chip: { gap: 1 },
+  chipTimeRow: { flexDirection: 'row', alignItems: 'center', gap: 4 },
   chipDot: { width: 6, height: 6, borderRadius: 3 },
   chipDotBig: { width: 10, height: 10, borderRadius: 5 },
-  chipText: { fontSize: 10, color: Colors.ink, flexShrink: 1 },
-  chipTextBig: { fontSize: 15 },
+  chipTime: { fontSize: 7, color: Colors.inkMuted, flexShrink: 1 },
+  chipTimeBig: { fontSize: 13 },
+  chipName: { fontSize: 9, color: Colors.ink, flexShrink: 1 },
+  chipNameBig: { fontSize: 15 },
 });

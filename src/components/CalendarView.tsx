@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import type { ReactNode } from 'react';
-import { Platform, View, Text, Pressable, StyleSheet } from 'react-native';
+import { Platform, View, Text, Pressable, StyleSheet, useWindowDimensions } from 'react-native';
 import {
   CalendarDay,
   CalendarViewMode,
@@ -13,6 +13,7 @@ import {
   weekdayShortLabel,
 } from '../features/calendar/calendarGrid';
 import { parseLocalDateString, toLocalDateString } from '../lib/dates';
+import { isWideLayout } from '../lib/layout';
 import { Colors, Radii, Typography } from '../lib/theme';
 
 const VIEW_LABELS: Record<CalendarViewMode, string> = { day: 'Giorno', week: 'Settimana', month: 'Mese' };
@@ -22,8 +23,6 @@ export interface CalendarViewProps {
   renderDay: (date: string, meta: { inCurrentPeriod: boolean; view: CalendarViewMode }) => ReactNode;
   onDayPress: (date: string) => void;
 }
-
-const isWeb = Platform.OS === 'web';
 
 function getDaysForView(view: CalendarViewMode, anchorDate: string): CalendarDay[] {
   if (view === 'day') return getDayView(anchorDate);
@@ -42,9 +41,42 @@ function chunkIntoWeeks(days: CalendarDay[]): CalendarDay[][] {
 export function CalendarView({ initialView = 'week', renderDay, onDayPress }: CalendarViewProps) {
   const [view, setView] = useState<CalendarViewMode>(initialView);
   const [anchorDate, setAnchorDate] = useState(() => toLocalDateString(new Date()));
+  // "web" da solo non basta: un browser su telefono riporta comunque
+  // Platform.OS === 'web'. Il trattamento "grande" è pensato per un
+  // layout desktop largo, quindi serve anche la larghezza reale della
+  // finestra — stessa soglia già usata da AppShell per sidebar/tab bar.
+  const { width, height } = useWindowDimensions();
+  const isWideWeb = Platform.OS === 'web' && isWideLayout(width);
 
   const days = getDaysForView(view, anchorDate);
   const periodLabel = formatPeriodLabel(view, anchorDate, days);
+
+  // Su mobile, Settimana non è più una riga di 7 celle strette ma 7 righe
+  // impilate verticalmente (una per giorno), ciascuna più grande — la
+  // label del giorno della settimana sotto usa già il font "grande"
+  // incondizionatamente perché Giorno/Settimana sono sempre spaziosi ora
+  // (boost desktop esistente, oppure impilamento/riempimento pagina qui).
+  const stackedWeek = view === 'week' && !isWideWeb;
+  const dayRows = stackedWeek ? days.map((d) => [d]) : chunkIntoWeeks(days);
+
+  // Stima grezza dello spazio occupato da titolo/toggle/header sopra la
+  // griglia sulla stessa pagina, più un margine per il padding attorno
+  // alla cella stessa (vedi dayCellDayMobile) — non misurabile con
+  // precisione senza layout imperativo in questo ambiente, va verificata
+  // a occhio.
+  const dayMobileMinHeight = Math.max(260, height - 300);
+
+  const cellSizeStyle = view === 'month'
+    ? isWideWeb ? styles.dayCellMonthWeb : undefined
+    : isWideWeb
+      ? styles.dayCellDayWeekWeb
+      : view === 'day'
+        ? [styles.dayCellDayMobile, { minHeight: dayMobileMinHeight }]
+        : styles.dayCellWeekStackedMobile;
+
+  const dayNumberStyle = view === 'month'
+    ? isWideWeb ? styles.dayNumberMonthWeb : undefined
+    : styles.dayNumberDayWeekWeb;
 
   return (
     <View style={styles.container}>
@@ -78,24 +110,18 @@ export function CalendarView({ initialView = 'week', renderDay, onDayPress }: Ca
         </View>
       )}
 
-      {chunkIntoWeeks(days).map((week, weekIndex) => (
-        <View key={weekIndex} style={styles.weekRow}>
-          {week.map((day) => (
+      {dayRows.map((row, rowIndex) => (
+        <View key={rowIndex} style={styles.weekRow}>
+          {row.map((day) => (
             <Pressable
               key={day.date}
-              style={[
-                styles.dayCell,
-                !day.inCurrentPeriod && styles.dayCellDimmed,
-                isWeb && (view === 'month' ? styles.dayCellMonthWeb : styles.dayCellDayWeekWeb),
-              ]}
+              style={[styles.dayCell, !day.inCurrentPeriod && styles.dayCellDimmed, cellSizeStyle]}
               onPress={() => onDayPress(day.date)}
             >
               {view !== 'month' && (
-                <Text style={[styles.weekdayLabel, isWeb && styles.weekdayLabelWeb]}>{weekdayShortLabel(day.date)}</Text>
+                <Text style={[styles.weekdayLabel, styles.weekdayLabelWeb]}>{weekdayShortLabel(day.date)}</Text>
               )}
-              <Text style={[styles.dayNumber, isWeb && (view === 'month' ? styles.dayNumberMonthWeb : styles.dayNumberDayWeekWeb)]}>
-                {parseLocalDateString(day.date).getDate()}
-              </Text>
+              <Text style={[styles.dayNumber, dayNumberStyle]}>{parseLocalDateString(day.date).getDate()}</Text>
               {renderDay(day.date, { inCurrentPeriod: day.inCurrentPeriod, view })}
             </Pressable>
           ))}
@@ -149,6 +175,14 @@ const styles = StyleSheet.create({
   // (vedi useFullWidthContent in AppShell) diventa già più largo su web.
   dayCellDayWeekWeb: { minHeight: 72 * 7 },
   dayCellMonthWeb: { minHeight: 72 * 1.5 },
+  // Giorno su mobile: la cella non riempie più il contenitore a filo,
+  // resta un po' di padding visibile ai lati e sopra/sotto.
+  dayCellDayMobile: { marginHorizontal: 12, marginVertical: 8 },
+  // Settimana su mobile: 7 celle impilate verticalmente invece che una riga
+  // stretta di 7 colonne — ciascuna più grande di prima, niente boost
+  // dinamico basato sulla finestra come per Giorno (qui il contenuto è già
+  // ripartito su 7 righe, non serve riempire l'intera pagina per riga).
+  dayCellWeekStackedMobile: { minHeight: 180 },
   weekdayLabel: { fontSize: 10, color: Colors.inkMuted, textAlign: 'center' },
   weekdayLabelWeb: { fontSize: 16 },
   dayNumber: { fontSize: 13, fontWeight: '600', textAlign: 'center', color: Colors.ink },
