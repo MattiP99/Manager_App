@@ -4,7 +4,14 @@ import { router } from 'expo-router';
 import { useClients } from '../../features/clients/useClients';
 import { useAllWorkSessions } from '../../features/work-sessions/useWorkSessions';
 import { useAllPayments } from '../../features/payments/usePayments';
-import { computeClientSummary, dateRangeForPeriod, filterByDateRange, Period } from '../../features/payments/computeClientSummary';
+import type { Period } from '../../features/payments/computeClientSummary';
+import { buildClientPaymentRows } from '../../features/payments/clientPaymentRows';
+import type { ClientPaymentRow } from '../../features/payments/clientPaymentRows';
+import { PAYMENT_METRICS } from '../../features/payments/constants';
+import { PressableCard } from '../../components/PressableCard';
+import { Colors, Radii, Spacing, Typography } from '../../lib/theme';
+
+const PERIOD_LABELS: Record<Period, string> = { week: 'Settimana', month: 'Mese', all: 'Tutto' };
 
 export default function PagamentiScreen() {
   const [period, setPeriod] = useState<Period>('all');
@@ -12,17 +19,16 @@ export default function PagamentiScreen() {
   const { data: sessions } = useAllWorkSessions();
   const { data: payments } = useAllPayments();
 
-  const range = dateRangeForPeriod(period);
-  const filteredSessions = filterByDateRange(sessions ?? [], range);
-  const filteredPayments = filterByDateRange(payments ?? [], range);
-
-  const rows = (clients ?? []).map((client) => {
-    const clientSessions = filteredSessions.filter((s) => s.client_id === client.id);
-    const clientPayments = filteredPayments.filter((p) => p.client_id === client.id);
-    return { client, summary: computeClientSummary(clientSessions, clientPayments) };
-  });
-
-  const grandTotal = computeClientSummary(filteredSessions, filteredPayments);
+  const rows = buildClientPaymentRows(clients ?? [], sessions ?? [], payments ?? [], period);
+  const grandTotal = rows.reduce(
+    (acc, r) => ({
+      totalHours: acc.totalHours + r.summary.totalHours,
+      totalDue: acc.totalDue + r.summary.totalDue,
+      totalPaid: acc.totalPaid + r.summary.totalPaid,
+      balance: acc.balance + r.summary.balance,
+    }),
+    { totalHours: 0, totalDue: 0, totalPaid: 0, balance: 0 }
+  );
 
   return (
     <View style={styles.container}>
@@ -35,47 +41,72 @@ export default function PagamentiScreen() {
             style={[styles.periodButton, period === p && styles.periodButtonActive]}
             onPress={() => setPeriod(p)}
           >
-            <Text>{p === 'week' ? 'Settimana' : p === 'month' ? 'Mese' : 'Tutto'}</Text>
+            <Text style={period === p ? styles.periodTextActive : styles.periodText}>{PERIOD_LABELS[p]}</Text>
           </Pressable>
         ))}
       </View>
 
-      <View style={styles.grandTotal}>
-        <Text>Ore totali: {grandTotal.totalHours.toFixed(2)}</Text>
-        <Text>Dovuto: €{grandTotal.totalDue.toFixed(2)}</Text>
-        <Text>Ricevuto: €{grandTotal.totalPaid.toFixed(2)}</Text>
-        <Text style={styles.balanceText}>Saldo: €{grandTotal.balance.toFixed(2)}</Text>
+      <View style={styles.summaryGrid}>
+        {PAYMENT_METRICS.map((metric) => (
+          <PressableCard
+            key={metric.key}
+            onPress={() => router.push({ pathname: '/payment-detail', params: { metric: metric.key, period } })}
+          >
+            <Text style={styles.summaryLabel}>{metric.label}</Text>
+            <Text style={styles.summaryValue}>{metric.format(grandTotal[metric.key])}</Text>
+          </PressableCard>
+        ))}
       </View>
 
       <FlatList
-        style={{ flex: 1 }}
+        style={styles.list}
+        contentContainerStyle={styles.listContent}
         data={rows}
         keyExtractor={(r) => r.client.id}
-        renderItem={({ item }) => (
-          <Pressable style={styles.row} onPress={() => router.push(`/client/${item.client.id}`)}>
+        renderItem={({ item }: { item: ClientPaymentRow }) => (
+          <PressableCard onPress={() => router.push(`/client/${item.client.id}`)}>
             <Text style={styles.clientName}>{item.client.name}</Text>
-            <Text>{item.summary.totalHours.toFixed(2)}h — dovuto €{item.summary.totalDue.toFixed(2)} — ricevuto €{item.summary.totalPaid.toFixed(2)}</Text>
-            <Text style={item.summary.balance > 0 ? styles.due : styles.settled}>
-              Saldo: €{item.summary.balance.toFixed(2)}
+            <Text style={styles.clientMeta}>
+              {item.summary.totalHours.toFixed(2)}h — dovuto €{item.summary.totalDue.toFixed(2)} — ricevuto €{item.summary.totalPaid.toFixed(2)}
             </Text>
-          </Pressable>
+            <Text style={item.summary.balance > 0 ? styles.due : styles.settled}>Saldo: €{item.summary.balance.toFixed(2)}</Text>
+          </PressableCard>
         )}
-        ListEmptyComponent={<Text>Nessun cliente ancora.</Text>}
+        ListEmptyComponent={<Text style={styles.empty}>Nessun cliente ancora.</Text>}
       />
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, padding: 24, gap: 8 },
-  title: { fontSize: 22, fontWeight: '600' },
-  periodRow: { flexDirection: 'row', gap: 8, marginVertical: 8 },
-  periodButton: { flex: 1, borderWidth: 1, borderColor: '#ccc', borderRadius: 8, padding: 10, alignItems: 'center' },
-  periodButtonActive: { backgroundColor: '#dbeafe', borderColor: '#2563eb' },
-  grandTotal: { backgroundColor: '#f3f4f6', borderRadius: 8, padding: 12, gap: 2, marginBottom: 8 },
-  balanceText: { fontWeight: '700' },
-  row: { paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: '#eee' },
-  clientName: { fontWeight: '600' },
-  due: { color: '#dc2626' },
-  settled: { color: '#16a34a' },
+  container: { flex: 1, padding: Spacing.md, gap: Spacing.md },
+  title: { ...Typography.title, color: Colors.ink },
+  periodRow: { flexDirection: 'row', gap: Spacing.sm },
+  periodButton: {
+    flex: 1,
+    backgroundColor: Colors.surface,
+    borderWidth: 1,
+    borderColor: Colors.hairline,
+    borderRadius: Radii.sm,
+    padding: Spacing.sm,
+    alignItems: 'center',
+    shadowColor: Colors.ink,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.12,
+    shadowRadius: 6,
+    elevation: 3,
+  },
+  periodButtonActive: { borderColor: Colors.accent },
+  periodText: { ...Typography.body, color: Colors.inkMuted },
+  periodTextActive: { ...Typography.bodyBold, color: Colors.ink },
+  summaryGrid: { gap: Spacing.sm },
+  summaryLabel: { ...Typography.caption, color: Colors.inkMuted },
+  summaryValue: { ...Typography.title, color: Colors.ink },
+  list: { flex: 1 },
+  listContent: { gap: Spacing.sm, paddingTop: Spacing.xs },
+  clientName: { ...Typography.bodyBold, color: Colors.ink },
+  clientMeta: { ...Typography.body, color: Colors.inkMuted },
+  due: { ...Typography.bodyBold, color: Colors.error },
+  settled: { ...Typography.bodyBold, color: Colors.success },
+  empty: { ...Typography.body, color: Colors.inkMuted },
 });
