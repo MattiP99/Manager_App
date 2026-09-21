@@ -13,7 +13,7 @@ export function useNotesBySection(sectionId: string | undefined) {
     queryFn: async (): Promise<Note[]> => {
       const { data, error } = await supabase
         .from('notes')
-        .select('id, section_id, title, content, content_encrypted')
+        .select('id, section_id, title, content, content_encrypted, created_at')
         .eq('section_id', sectionId!)
         .order('created_at', { ascending: false })
         .order('id', { ascending: false });
@@ -45,7 +45,7 @@ export function useCreateNote() {
           content: input.content ?? null,
           content_encrypted: input.contentEncrypted ?? null,
         })
-        .select('id, section_id, title, content, content_encrypted')
+        .select('id, section_id, title, content, content_encrypted, created_at')
         .single();
       if (error) throw error;
       return data as Note;
@@ -66,7 +66,7 @@ export function useUpdateNote() {
           content_encrypted: input.contentEncrypted ?? null,
         })
         .eq('id', input.id)
-        .select('id, section_id, title, content, content_encrypted')
+        .select('id, section_id, title, content, content_encrypted, created_at')
         .single();
       if (error) throw error;
       return data as Note;

@@ -1,9 +1,12 @@
 import { useEffect, useState } from 'react';
 import { TextInput, Text, Pressable, StyleSheet, ScrollView } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useNoteSections } from '../features/notes/useNoteSections';
 import { useDeleteNote, useNotesBySection, useUpdateNote } from '../features/notes/useNotes';
 import { decryptText, encryptText, loadVerifiedKey } from '../features/notes/crypto/aesNotes';
+import { GRADIENT_COLORS, GRADIENT_LOCATIONS } from '../components/AppShell';
+import { Colors, Fonts, Typography } from '../lib/theme';
 
 export default function EditNoteScreen() {
   const { id, sectionId } = useLocalSearchParams<{ id: string; sectionId: string }>();
@@ -85,43 +88,48 @@ export default function EditNoteScreen() {
   };
 
   return (
-    <ScrollView contentContainerStyle={styles.container}>
-      <Text style={styles.title}>Modifica nota — {section.title}</Text>
-      {decryptError && <Text style={styles.error}>Impossibile decifrare questa nota (chiave mancante o passphrase diversa da quella usata per salvarla).</Text>}
+    <LinearGradient colors={GRADIENT_COLORS} locations={GRADIENT_LOCATIONS} style={styles.fill}>
+      <ScrollView contentContainerStyle={styles.container}>
+        <Text style={styles.title}>Modifica nota</Text>
+        <Text style={styles.subtitle}>{section.title}</Text>
+        {decryptError && <Text style={styles.error}>Impossibile decifrare questa nota (chiave mancante o passphrase diversa da quella usata per salvarla).</Text>}
 
-      <TextInput style={styles.input} placeholder="Titolo" value={title} onChangeText={setTitle} />
-      <TextInput
-        style={[styles.input, styles.multiline]}
-        placeholder="Contenuto"
-        value={content}
-        onChangeText={setContent}
-        multiline
-      />
+        <TextInput style={styles.input} placeholder="Titolo" value={title} onChangeText={setTitle} />
+        <TextInput
+          style={[styles.input, styles.multiline]}
+          placeholder="Contenuto"
+          value={content}
+          onChangeText={setContent}
+          multiline
+        />
 
-      {updateNote.isError && <Text style={styles.error}>{(updateNote.error as Error).message}</Text>}
-      <Pressable style={styles.button} onPress={handleSave} disabled={updateNote.isPending || decryptError}>
-        <Text style={styles.buttonText}>Salva</Text>
-      </Pressable>
-      <Pressable style={styles.deleteButton} onPress={handleDelete} disabled={deleteNote.isPending}>
-        <Text style={styles.deleteButtonText}>Elimina nota</Text>
-      </Pressable>
-      <Pressable onPress={() => router.back()}>
-        <Text style={styles.cancel}>Annulla</Text>
-      </Pressable>
-    </ScrollView>
+        {updateNote.isError && <Text style={styles.error}>{(updateNote.error as Error).message}</Text>}
+        <Pressable style={styles.button} onPress={handleSave} disabled={updateNote.isPending || decryptError}>
+          <Text style={styles.buttonText}>Salva</Text>
+        </Pressable>
+        <Pressable style={styles.deleteButton} onPress={handleDelete} disabled={deleteNote.isPending}>
+          <Text style={styles.deleteButtonText}>Elimina nota</Text>
+        </Pressable>
+        <Pressable onPress={() => router.back()}>
+          <Text style={styles.cancel}>Annulla</Text>
+        </Pressable>
+      </ScrollView>
+    </LinearGradient>
   );
 }
 
 const styles = StyleSheet.create({
+  fill: { flex: 1 },
   container: { flexGrow: 1, justifyContent: 'center', padding: 24, gap: 12 },
   padded: { padding: 24 },
-  title: { fontSize: 22, fontWeight: '600', marginBottom: 4 },
-  input: { borderWidth: 1, borderColor: '#ccc', borderRadius: 8, padding: 12 },
+  title: { fontFamily: Fonts.regular, fontSize: 30, lineHeight: 36, color: Colors.surface, marginBottom: 0 },
+  subtitle: { ...Typography.subtitle, color: Colors.surface, opacity: 0.85, marginBottom: 4 },
+  input: { borderWidth: 1, borderColor: '#ccc', borderRadius: 8, padding: 12, backgroundColor: Colors.surface },
   multiline: { minHeight: 100, textAlignVertical: 'top' },
-  button: { backgroundColor: '#2563eb', borderRadius: 8, padding: 14, alignItems: 'center' },
-  buttonText: { color: 'white', fontWeight: '600' },
-  deleteButton: { borderWidth: 1, borderColor: '#dc2626', borderRadius: 8, padding: 14, alignItems: 'center' },
+  button: { backgroundColor: Colors.accent, borderRadius: 8, padding: 14, alignItems: 'center' },
+  buttonText: { color: Colors.ink, fontWeight: '600' },
+  deleteButton: { borderWidth: 1, borderColor: '#dc2626', borderRadius: 8, padding: 14, alignItems: 'center', backgroundColor: Colors.surface },
   deleteButtonText: { color: '#dc2626', fontWeight: '600' },
   error: { color: '#dc2626' },
-  cancel: { textAlign: 'center', marginTop: 8 },
+  cancel: { textAlign: 'center', marginTop: 8, color: Colors.ink },
 });

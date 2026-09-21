@@ -15,4 +15,5 @@ export interface Note {
   title: string;
   content: string | null;
   content_encrypted: string | null;
+  created_at: string;
 }
