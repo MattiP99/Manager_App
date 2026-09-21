@@ -26,7 +26,7 @@ export function endOfMonth(dateStr: string): string {
   return toLocalDateString(new Date(d.getFullYear(), d.getMonth() + 1, 0));
 }
 
-/** Sposta l'ancora di un mese, sempre al giorno 1 del mese di destinazione — a differenza di shiftAnchorDate (calendarGrid.ts) non serve preservare il giorno del mese: chi chiama questa funzione ne legge solo mese/anno tramite startOfMonth/endOfMonth/monthLabel. */
+/** Sposta l'ancora di un mese, sempre al giorno 1 del mese di destinazione — a differenza di shiftAnchorDate (calendarGrid.ts) non serve preservare il giorno del mese: chi chiama questa funzione ne legge solo mese/anno tramite startOfMonth/endOfMonth/periodLabel (computeClientSummary.ts). */
 export function shiftMonth(dateStr: string, direction: 1 | -1): string {
   const d = parseLocalDateString(dateStr);
   return toLocalDateString(new Date(d.getFullYear(), d.getMonth() + direction, 1));

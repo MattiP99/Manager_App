@@ -1,5 +1,5 @@
 import { FAMILY_CATEGORIES } from '../family-calendar/constants';
-import type { ExpenseCategory, FrancescaActivity } from './expenseSummary';
+import type { ExpenseCategory } from './expenseSummary';
 
 export const EXPENSE_CATEGORIES: { value: ExpenseCategory; label: string }[] = [
   { value: 'supermercato', label: 'Supermercato' },
@@ -8,11 +8,7 @@ export const EXPENSE_CATEGORIES: { value: ExpenseCategory; label: string }[] = [
   { value: 'francesca', label: 'Francesca' },
 ];
 
-// Le 5 attività reali di Francesca, derivate da FAMILY_CATEGORIES escludendo
-// 'altro' (non è un valore valido per francesca_activity — vedi il CHECK
-// nella migrazione 0007). Il cast è isolato a questa singola riga: senza,
-// TypeScript non restringe il tipo di .value dopo un filter().
-export const FRANCESCA_ACTIVITIES = FAMILY_CATEGORIES.filter((c) => c.value !== 'altro') as {
-  value: FrancescaActivity;
-  label: string;
-}[];
+// Le 6 attività di Francesca (incluso 'altro', vedi migrazione 0012)
+// coincidono esattamente con FamilyCategory — stesso elenco del Calendario,
+// nessun filtro/cast necessario.
+export const FRANCESCA_ACTIVITIES = FAMILY_CATEGORIES;

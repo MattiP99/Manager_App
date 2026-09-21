@@ -11,7 +11,7 @@ import type { ClientPaymentRow } from '../../features/payments/clientPaymentRows
 import { PAYMENT_METRICS, PERIOD_LABELS } from '../../features/payments/constants';
 import { PressableCard } from '../../components/PressableCard';
 import { shiftMonth, shiftWeek, toLocalDateString } from '../../lib/dates';
-import { Colors, Radii, Spacing, Typography } from '../../lib/theme';
+import { Colors, Fonts, Radii, Spacing, Typography } from '../../lib/theme';
 
 export default function PagamentiScreen() {
   const [mode, setMode] = useState<PaymentPeriodMode>('week');
@@ -101,7 +101,9 @@ export default function PagamentiScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1, padding: Spacing.md },
   headerContainer: { gap: Spacing.md, marginBottom: Spacing.sm },
-  title: { ...Typography.title, color: Colors.ink },
+  // Bianco, centrato, più grande, non grassetto — sopra il gradiente
+  // canvas→accento di AppShell.
+  title: { fontFamily: Fonts.regular, fontSize: 32, lineHeight: 38, color: Colors.surface, textAlign: 'center' },
   modeRow: { flexDirection: 'row', gap: Spacing.sm },
   modeButton: {
     flex: 1,

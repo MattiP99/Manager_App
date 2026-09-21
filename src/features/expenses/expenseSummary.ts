@@ -1,9 +1,10 @@
-import { ITALIAN_MONTHS } from '../calendar/calendarGrid';
-import { parseLocalDateString } from '../../lib/dates';
 import type { FamilyCategory } from '../family-calendar/recurringOccurrences';
 
 export type ExpenseCategory = 'supermercato' | 'frutta_verdura' | 'extra' | 'francesca';
-export type FrancescaActivity = Exclude<FamilyCategory, 'altro'>;
+// 'altro' era escluso qui perché non c'era un caso d'uso per una spesa
+// Francesca "generica" — ora c'è (vedi migrazione 0012), quindi riusa
+// l'intero FamilyCategory invece di escluderne un valore.
+export type FrancescaActivity = FamilyCategory;
 
 export interface Expense {
   id: string;
@@ -41,9 +42,4 @@ export function summarizeFrancescaByActivity(expenses: Expense[], activities: Fr
     const total = activityExpenses.reduce((sum, e) => sum + e.amount, 0);
     return { activity, total, expenses: activityExpenses };
   });
-}
-
-export function monthLabel(dateStr: string): string {
-  const d = parseLocalDateString(dateStr);
-  return `${ITALIAN_MONTHS[d.getMonth()]} ${d.getFullYear()}`;
 }

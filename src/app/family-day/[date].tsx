@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { View, Text, Pressable, StyleSheet, FlatList } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useRecurringTemplates } from '../../features/family-calendar/useRecurringTemplates';
 import { useAllCalendarEvents, useUpsertOccurrenceOverride } from '../../features/family-calendar/useCalendarEvents';
@@ -7,6 +8,7 @@ import { expandOccurrences } from '../../features/family-calendar/recurringOccur
 import type { Occurrence } from '../../features/family-calendar/recurringOccurrences';
 import { FamilyOccurrenceDetail } from '../../features/family-calendar/FamilyOccurrenceDetail';
 import { DetailModal } from '../../components/DetailModal';
+import { GRADIENT_COLORS, GRADIENT_LOCATIONS } from '../../components/AppShell';
 import { formatDayLabel } from '../../features/calendar/calendarGrid';
 import { FAMILY_CATEGORIES, FAMILY_CATEGORY_COLORS } from '../../features/family-calendar/constants';
 import { toShortTime } from '../../lib/dates';
@@ -38,51 +40,54 @@ export default function FamilyDayDetailScreen() {
   };
 
   return (
-    <View style={styles.container}>
-      <Pressable onPress={() => router.back()}>
-        <Text style={styles.back}>← Indietro</Text>
-      </Pressable>
-      <Text style={styles.title}>{formatDayLabel(date)}</Text>
+    <LinearGradient colors={GRADIENT_COLORS} locations={GRADIENT_LOCATIONS} style={styles.fill}>
+      <View style={styles.container}>
+        <Pressable onPress={() => router.back()}>
+          <Text style={styles.back}>← Indietro</Text>
+        </Pressable>
+        <Text style={styles.title}>{formatDayLabel(date)}</Text>
 
-      <FlatList
-        style={{ flex: 1 }}
-        data={occurrences}
-        keyExtractor={(o) => o.id}
-        renderItem={({ item }) => (
-          <View style={styles.row}>
-            <Pressable style={styles.rowMain} onPress={() => setSelectedOccurrence(item)}>
-              <View style={styles.rowTitleRow}>
-                <View style={[styles.categoryDot, { backgroundColor: FAMILY_CATEGORY_COLORS[item.category] }]} />
-                <Text style={styles.rowTitle}>{item.title} — {item.person}</Text>
-              </View>
-              <Text style={styles.rowMeta}>
-                {categoryLabel(item.category)}
-                {item.start_time && item.end_time ? ` · ${toShortTime(item.start_time)}–${toShortTime(item.end_time)}` : ''}
-              </Text>
-            </Pressable>
-            {item.recurringTemplateId && (
-              <Pressable onPress={() => handleSkip(item)} disabled={skipOccurrence.isPending}>
-                <Text style={styles.skipLink}>Salta oggi</Text>
+        <FlatList
+          style={{ flex: 1 }}
+          data={occurrences}
+          keyExtractor={(o) => o.id}
+          renderItem={({ item }) => (
+            <View style={styles.row}>
+              <Pressable style={styles.rowMain} onPress={() => setSelectedOccurrence(item)}>
+                <View style={styles.rowTitleRow}>
+                  <View style={[styles.categoryDot, { backgroundColor: FAMILY_CATEGORY_COLORS[item.category] }]} />
+                  <Text style={styles.rowTitle}>{item.title} — {item.person}</Text>
+                </View>
+                <Text style={styles.rowMeta}>
+                  {categoryLabel(item.category)}
+                  {item.start_time && item.end_time ? ` · ${toShortTime(item.start_time)}–${toShortTime(item.end_time)}` : ''}
+                </Text>
               </Pressable>
-            )}
-          </View>
-        )}
-        ListEmptyComponent={<Text>Nessun impegno in questo giorno.</Text>}
-      />
+              {item.recurringTemplateId && (
+                <Pressable onPress={() => handleSkip(item)} disabled={skipOccurrence.isPending}>
+                  <Text style={styles.skipLink}>Salta oggi</Text>
+                </Pressable>
+              )}
+            </View>
+          )}
+          ListEmptyComponent={<Text>Nessun impegno in questo giorno.</Text>}
+        />
 
-      <Pressable style={styles.addButton} onPress={() => router.push({ pathname: '/add-family-event', params: { date } })}>
-        <Text style={styles.addButtonText}>+ Evento</Text>
-      </Pressable>
+        <Pressable style={styles.addButton} onPress={() => router.push({ pathname: '/add-family-event', params: { date } })}>
+          <Text style={styles.addButtonText}>+ Evento</Text>
+        </Pressable>
 
-      <DetailModal visible={!!selectedOccurrence} onClose={() => setSelectedOccurrence(null)}>
-        {selectedOccurrence && <FamilyOccurrenceDetail occurrence={selectedOccurrence} />}
-      </DetailModal>
-    </View>
+        <DetailModal visible={!!selectedOccurrence} onClose={() => setSelectedOccurrence(null)}>
+          {selectedOccurrence && <FamilyOccurrenceDetail occurrence={selectedOccurrence} />}
+        </DetailModal>
+      </View>
+    </LinearGradient>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, padding: Spacing.lg, gap: Spacing.sm, backgroundColor: Colors.canvas },
+  fill: { flex: 1 },
+  container: { flex: 1, padding: Spacing.lg, gap: Spacing.sm },
   back: { color: Colors.ink, marginBottom: Spacing.xs },
   title: { ...Typography.title, color: Colors.ink },
   row: {

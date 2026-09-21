@@ -1,11 +1,13 @@
 import { useState } from 'react';
 import { View, Text, Pressable, StyleSheet, FlatList } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useClients } from '../../features/clients/useClients';
 import { useAllWorkSessionsStatus } from '../../features/work-sessions/useWorkSessions';
 import type { WorkSessionStatus } from '../../features/work-sessions/useWorkSessions';
 import { WorkSessionDetail } from '../../features/work-sessions/WorkSessionDetail';
 import { DetailModal } from '../../components/DetailModal';
+import { GRADIENT_COLORS, GRADIENT_LOCATIONS } from '../../components/AppShell';
 import { formatDayLabel } from '../../features/calendar/calendarGrid';
 import { toShortTime } from '../../lib/dates';
 import { Colors, Radii, Spacing, Typography } from '../../lib/theme';
@@ -20,42 +22,45 @@ export default function DayDetailScreen() {
   const clientName = (clientId: string) => clients?.find((c) => c.id === clientId)?.name ?? 'Cliente';
 
   return (
-    <View style={styles.container}>
-      <Pressable onPress={() => router.back()}>
-        <Text style={styles.back}>← Indietro</Text>
-      </Pressable>
-      <Text style={styles.title}>{formatDayLabel(date)}</Text>
+    <LinearGradient colors={GRADIENT_COLORS} locations={GRADIENT_LOCATIONS} style={styles.fill}>
+      <View style={styles.container}>
+        <Pressable onPress={() => router.back()}>
+          <Text style={styles.back}>← Indietro</Text>
+        </Pressable>
+        <Text style={styles.title}>{formatDayLabel(date)}</Text>
 
-      <FlatList
-        style={{ flex: 1 }}
-        data={daySessions}
-        keyExtractor={(s) => s.id}
-        renderItem={({ item }) => (
-          <Pressable style={styles.card} onPress={() => setSelectedSession(item)}>
-            <Text style={styles.clientName}>{clientName(item.client_id)}</Text>
-            <Text style={styles.meta}>
-              {item.hours}h — €{item.amount_due.toFixed(2)}
-              {item.start_time && item.end_time ? ` — ${toShortTime(item.start_time)}–${toShortTime(item.end_time)}` : ''}
-            </Text>
-            {item.note && <Text style={styles.note}>{item.note}</Text>}
-          </Pressable>
-        )}
-        ListEmptyComponent={<Text>Nessuna giornata lavorata in questo giorno.</Text>}
-      />
+        <FlatList
+          style={{ flex: 1 }}
+          data={daySessions}
+          keyExtractor={(s) => s.id}
+          renderItem={({ item }) => (
+            <Pressable style={styles.card} onPress={() => setSelectedSession(item)}>
+              <Text style={styles.clientName}>{clientName(item.client_id)}</Text>
+              <Text style={styles.meta}>
+                {item.hours}h — €{item.amount_due.toFixed(2)}
+                {item.start_time && item.end_time ? ` — ${toShortTime(item.start_time)}–${toShortTime(item.end_time)}` : ''}
+              </Text>
+              {item.note && <Text style={styles.note}>{item.note}</Text>}
+            </Pressable>
+          )}
+          ListEmptyComponent={<Text>Nessuna giornata lavorata in questo giorno.</Text>}
+        />
 
-      <Pressable style={styles.addButton} onPress={() => router.push({ pathname: '/add-work-session', params: { date } })}>
-        <Text style={styles.addButtonText}>+ Giornata</Text>
-      </Pressable>
+        <Pressable style={styles.addButton} onPress={() => router.push({ pathname: '/add-work-session', params: { date } })}>
+          <Text style={styles.addButtonText}>+ Giornata</Text>
+        </Pressable>
 
-      <DetailModal visible={!!selectedSession} onClose={() => setSelectedSession(null)}>
-        {selectedSession && <WorkSessionDetail session={selectedSession} clientName={clientName(selectedSession.client_id)} />}
-      </DetailModal>
-    </View>
+        <DetailModal visible={!!selectedSession} onClose={() => setSelectedSession(null)}>
+          {selectedSession && <WorkSessionDetail session={selectedSession} clientName={clientName(selectedSession.client_id)} />}
+        </DetailModal>
+      </View>
+    </LinearGradient>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, padding: Spacing.lg, gap: Spacing.md, backgroundColor: Colors.canvas },
+  fill: { flex: 1 },
+  container: { flex: 1, padding: Spacing.lg, gap: Spacing.md },
   back: { color: Colors.ink, marginBottom: Spacing.xs },
   title: { ...Typography.title, color: Colors.ink },
   card: {

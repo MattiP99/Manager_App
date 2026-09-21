@@ -1,4 +1,4 @@
-import { Expense, monthLabel, summarizeByCategory, summarizeFrancescaByActivity } from './expenseSummary';
+import { Expense, summarizeByCategory, summarizeFrancescaByActivity } from './expenseSummary';
 
 function expense(overrides: Partial<Expense>): Expense {
   return {
@@ -42,21 +42,21 @@ describe('summarizeFrancescaByActivity', () => {
       expense({ id: 'c', category: 'francesca', francesca_activity: 'mensa', amount: 25 }),
       expense({ id: 'd', category: 'supermercato', amount: 100 }), // non-francesca, deve essere ignorata
     ];
-    const summary = summarizeFrancescaByActivity(expenses, ['mensa', 'palestra', 'cavallo', 'piscina', 'teatro']);
+    const summary = summarizeFrancescaByActivity(expenses, ['mensa', 'palestra', 'cavallo', 'piscina', 'teatro', 'altro']);
     expect(summary.find((s) => s.activity === 'piscina')!.total).toBe(50);
     expect(summary.find((s) => s.activity === 'mensa')!.total).toBe(25);
     expect(summary.find((s) => s.activity === 'palestra')!.total).toBe(0);
     const grandTotal = summary.reduce((sum, s) => sum + s.total, 0);
     expect(grandTotal).toBe(75); // i 100 della spesa supermercato NON devono entrare
   });
-});
 
-describe('monthLabel', () => {
-  it('formats a date as "Mese Anno" in Italian', () => {
-    expect(monthLabel('2026-09-18')).toBe('Settembre 2026');
-  });
-
-  it('uses the year of the given date, not the current year', () => {
-    expect(monthLabel('2027-01-05')).toBe('Gennaio 2027');
+  it("sums 'altro' like any other activity (migration 0012 made it a valid francesca_activity)", () => {
+    const expenses = [
+      expense({ id: 'a', category: 'francesca', francesca_activity: 'altro', label: 'Dentista', amount: 30 }),
+      expense({ id: 'b', category: 'francesca', francesca_activity: 'altro', amount: 20 }),
+    ];
+    const summary = summarizeFrancescaByActivity(expenses, ['mensa', 'palestra', 'cavallo', 'piscina', 'teatro', 'altro']);
+    expect(summary.find((s) => s.activity === 'altro')!.total).toBe(50);
+    expect(summary.find((s) => s.activity === 'altro')!.expenses).toHaveLength(2);
   });
 });

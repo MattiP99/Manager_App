@@ -18,7 +18,7 @@ import { FamilyOccurrenceDetail } from '../../features/family-calendar/FamilyOcc
 import { FAMILY_CATEGORY_COLORS } from '../../features/family-calendar/constants';
 import { splitByHalfDay } from '../../features/calendar/dayHalves';
 import { addDays, formatCompactHour, toLocalDateString, toShortTime } from '../../lib/dates';
-import { Colors, Radii, Spacing, Typography } from '../../lib/theme';
+import { Colors, Fonts, Radii, Spacing, Typography } from '../../lib/theme';
 
 type CalendarSection = 'lavoro' | 'francesca';
 
@@ -205,7 +205,10 @@ export default function CalendarioScreen() {
 const styles = StyleSheet.create({
   scrollView: { flex: 1 },
   scrollContent: { padding: Spacing.md, gap: Spacing.md },
-  title: { ...Typography.title, color: Colors.ink },
+  // Bianco, centrato, più grande, non grassetto — sopra il gradiente
+  // canvas→accento di AppShell, non più sul token Typography.title (semi-
+  // bold, ink, sinistra) usato invece per i titoli "interni" (card, modali).
+  title: { fontFamily: Fonts.regular, fontSize: 32, lineHeight: 38, color: Colors.surface, textAlign: 'center' },
   sectionToggle: { flexDirection: 'row', gap: Spacing.sm },
   sectionButton: {
     flex: 1,
