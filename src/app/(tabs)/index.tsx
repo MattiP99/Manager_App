@@ -1,8 +1,10 @@
 import { useMemo, useState } from 'react';
 import type { ReactNode } from 'react';
-import { View, Text, StyleSheet, ScrollView, Pressable } from 'react-native';
+import { Platform, View, Text, StyleSheet, ScrollView, Pressable } from 'react-native';
 import { router } from 'expo-router';
 import { CalendarView } from '../../components/CalendarView';
+import type { CalendarViewMode } from '../../features/calendar/calendarGrid';
+import { useFullWidthContent } from '../../components/AppShell';
 import { DetailModal } from '../../components/DetailModal';
 import { useAllWorkSessionsStatus } from '../../features/work-sessions/useWorkSessions';
 import type { WorkSessionStatus } from '../../features/work-sessions/useWorkSessions';
@@ -15,12 +17,19 @@ import type { Occurrence } from '../../features/family-calendar/recurringOccurre
 import { FamilyOccurrenceDetail } from '../../features/family-calendar/FamilyOccurrenceDetail';
 import { FAMILY_CATEGORY_COLORS } from '../../features/family-calendar/constants';
 import { splitByHalfDay } from '../../features/calendar/dayHalves';
-import { addDays, toLocalDateString } from '../../lib/dates';
+import { addDays, toLocalDateString, toShortTime } from '../../lib/dates';
 import { Colors, Radii, Spacing, Typography } from '../../lib/theme';
 
 type CalendarSection = 'lavoro' | 'francesca';
 
-function WorkChip({ session, clientName, onPress }: { session: WorkSessionStatus; clientName: string; onPress: () => void }) {
+// Solo web, e solo su Giorno/Settimana (non Mese): le celle sono molto più
+// grandi lì (vedi CalendarView), quindi anche i chip al loro interno
+// scalano di conseguenza — Mese resta compatto.
+function isBigChip(view: CalendarViewMode): boolean {
+  return Platform.OS === 'web' && view !== 'month';
+}
+
+function WorkChip({ session, clientName, onPress, big }: { session: WorkSessionStatus; clientName: string; onPress: () => void; big: boolean }) {
   return (
     <Pressable
       style={styles.chip}
@@ -34,16 +43,16 @@ function WorkChip({ session, clientName, onPress }: { session: WorkSessionStatus
         onPress();
       }}
     >
-      <View style={[styles.chipDot, { backgroundColor: Colors.accent }]} />
-      <Text style={styles.chipText} numberOfLines={1}>
-        {session.start_time && session.end_time ? `${session.start_time}–${session.end_time} ` : ''}
+      <View style={[styles.chipDot, big && styles.chipDotBig, { backgroundColor: Colors.accent }]} />
+      <Text style={[styles.chipText, big && styles.chipTextBig]} numberOfLines={1}>
+        {session.start_time && session.end_time ? `${toShortTime(session.start_time)}–${toShortTime(session.end_time)} ` : ''}
         {clientName}
       </Text>
     </Pressable>
   );
 }
 
-function FamilyChip({ occurrence, onPress }: { occurrence: Occurrence; onPress: () => void }) {
+function FamilyChip({ occurrence, onPress, big }: { occurrence: Occurrence; onPress: () => void; big: boolean }) {
   return (
     <Pressable
       style={styles.chip}
@@ -52,9 +61,9 @@ function FamilyChip({ occurrence, onPress }: { occurrence: Occurrence; onPress: 
         onPress();
       }}
     >
-      <View style={[styles.chipDot, { backgroundColor: FAMILY_CATEGORY_COLORS[occurrence.category] }]} />
-      <Text style={styles.chipText} numberOfLines={1}>
-        {occurrence.start_time && occurrence.end_time ? `${occurrence.start_time}–${occurrence.end_time} ` : ''}
+      <View style={[styles.chipDot, big && styles.chipDotBig, { backgroundColor: FAMILY_CATEGORY_COLORS[occurrence.category] }]} />
+      <Text style={[styles.chipText, big && styles.chipTextBig]} numberOfLines={1}>
+        {occurrence.start_time && occurrence.end_time ? `${toShortTime(occurrence.start_time)}–${toShortTime(occurrence.end_time)} ` : ''}
         {occurrence.title}
       </Text>
     </Pressable>
@@ -73,6 +82,7 @@ function DayHalves<T extends { start_time: string | null }>({ items, renderChip 
 }
 
 export default function CalendarioScreen() {
+  useFullWidthContent();
   const [section, setSection] = useState<CalendarSection>('lavoro');
   const [selectedSession, setSelectedSession] = useState<WorkSessionStatus | null>(null);
   const [selectedOccurrence, setSelectedOccurrence] = useState<Occurrence | null>(null);
@@ -129,11 +139,17 @@ export default function CalendarioScreen() {
         <CalendarView
           key="lavoro"
           initialView="week"
-          renderDay={(date) => (
+          renderDay={(date, meta) => (
             <DayHalves
               items={sessionsByDate.get(date) ?? []}
               renderChip={(s) => (
-                <WorkChip key={s.id} session={s} clientName={clientName(s.client_id)} onPress={() => setSelectedSession(s)} />
+                <WorkChip
+                  key={s.id}
+                  session={s}
+                  clientName={clientName(s.client_id)}
+                  onPress={() => setSelectedSession(s)}
+                  big={isBigChip(meta.view)}
+                />
               )}
             />
           )}
@@ -143,10 +159,12 @@ export default function CalendarioScreen() {
         <CalendarView
           key="francesca"
           initialView="week"
-          renderDay={(date) => (
+          renderDay={(date, meta) => (
             <DayHalves
               items={occurrencesByDate.get(date) ?? []}
-              renderChip={(o) => <FamilyChip key={o.id} occurrence={o} onPress={() => setSelectedOccurrence(o)} />}
+              renderChip={(o) => (
+                <FamilyChip key={o.id} occurrence={o} onPress={() => setSelectedOccurrence(o)} big={isBigChip(meta.view)} />
+              )}
             />
           )}
           onDayPress={(date) => router.push(`/family-day/${date}`)}
@@ -191,5 +209,7 @@ const styles = StyleSheet.create({
   halfDivider: { height: 1, backgroundColor: Colors.hairline },
   chip: { flexDirection: 'row', alignItems: 'center', gap: 4 },
   chipDot: { width: 6, height: 6, borderRadius: 3 },
+  chipDotBig: { width: 10, height: 10, borderRadius: 5 },
   chipText: { fontSize: 10, color: Colors.ink, flexShrink: 1 },
+  chipTextBig: { fontSize: 15 },
 });

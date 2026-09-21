@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import type { ReactNode } from 'react';
-import { View, Text, Pressable, StyleSheet } from 'react-native';
+import { Platform, View, Text, Pressable, StyleSheet } from 'react-native';
 import {
   CalendarDay,
   CalendarViewMode,
@@ -19,9 +19,11 @@ const VIEW_LABELS: Record<CalendarViewMode, string> = { day: 'Giorno', week: 'Se
 
 export interface CalendarViewProps {
   initialView?: CalendarViewMode;
-  renderDay: (date: string, meta: { inCurrentPeriod: boolean }) => ReactNode;
+  renderDay: (date: string, meta: { inCurrentPeriod: boolean; view: CalendarViewMode }) => ReactNode;
   onDayPress: (date: string) => void;
 }
+
+const isWeb = Platform.OS === 'web';
 
 function getDaysForView(view: CalendarViewMode, anchorDate: string): CalendarDay[] {
   if (view === 'day') return getDayView(anchorDate);
@@ -81,12 +83,20 @@ export function CalendarView({ initialView = 'week', renderDay, onDayPress }: Ca
           {week.map((day) => (
             <Pressable
               key={day.date}
-              style={[styles.dayCell, !day.inCurrentPeriod && styles.dayCellDimmed]}
+              style={[
+                styles.dayCell,
+                !day.inCurrentPeriod && styles.dayCellDimmed,
+                isWeb && (view === 'month' ? styles.dayCellMonthWeb : styles.dayCellDayWeekWeb),
+              ]}
               onPress={() => onDayPress(day.date)}
             >
-              {view !== 'month' && <Text style={styles.weekdayLabel}>{weekdayShortLabel(day.date)}</Text>}
-              <Text style={styles.dayNumber}>{parseLocalDateString(day.date).getDate()}</Text>
-              {renderDay(day.date, { inCurrentPeriod: day.inCurrentPeriod })}
+              {view !== 'month' && (
+                <Text style={[styles.weekdayLabel, isWeb && styles.weekdayLabelWeb]}>{weekdayShortLabel(day.date)}</Text>
+              )}
+              <Text style={[styles.dayNumber, isWeb && (view === 'month' ? styles.dayNumberMonthWeb : styles.dayNumberDayWeekWeb)]}>
+                {parseLocalDateString(day.date).getDate()}
+              </Text>
+              {renderDay(day.date, { inCurrentPeriod: day.inCurrentPeriod, view })}
             </Pressable>
           ))}
         </View>
@@ -132,6 +142,16 @@ const styles = StyleSheet.create({
     padding: 4,
   },
   dayCellDimmed: { opacity: 0.4 },
+  // Solo web: su Giorno/Settimana le celle diventano molto più alte per
+  // "scendere meglio nella pagina" su schermi larghi; su Mese la crescita
+  // resta modesta (stesso layout a griglia, meno spazio verticale per cella).
+  // La larghezza segue senza stile dedicato: il contenitore del calendario
+  // (vedi useFullWidthContent in AppShell) diventa già più largo su web.
+  dayCellDayWeekWeb: { minHeight: 72 * 7 },
+  dayCellMonthWeb: { minHeight: 72 * 1.5 },
   weekdayLabel: { fontSize: 10, color: Colors.inkMuted, textAlign: 'center' },
+  weekdayLabelWeb: { fontSize: 16 },
   dayNumber: { fontSize: 13, fontWeight: '600', textAlign: 'center', color: Colors.ink },
+  dayNumberDayWeekWeb: { fontSize: 26 },
+  dayNumberMonthWeb: { fontSize: 16 },
 });
