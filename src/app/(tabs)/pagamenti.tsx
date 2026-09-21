@@ -7,11 +7,9 @@ import { useAllPayments } from '../../features/payments/usePayments';
 import type { Period } from '../../features/payments/computeClientSummary';
 import { buildClientPaymentRows } from '../../features/payments/clientPaymentRows';
 import type { ClientPaymentRow } from '../../features/payments/clientPaymentRows';
-import { PAYMENT_METRICS } from '../../features/payments/constants';
+import { PAYMENT_METRICS, PERIOD_LABELS } from '../../features/payments/constants';
 import { PressableCard } from '../../components/PressableCard';
 import { Colors, Radii, Spacing, Typography } from '../../lib/theme';
-
-const PERIOD_LABELS: Record<Period, string> = { week: 'Settimana', month: 'Mese', all: 'Tutto' };
 
 export default function PagamentiScreen() {
   const [period, setPeriod] = useState<Period>('all');
@@ -30,8 +28,8 @@ export default function PagamentiScreen() {
     { totalHours: 0, totalDue: 0, totalPaid: 0, balance: 0 }
   );
 
-  return (
-    <View style={styles.container}>
+  const listHeader = (
+    <View style={styles.headerContainer}>
       <Text style={styles.title}>Pagamenti</Text>
 
       <View style={styles.periodRow}>
@@ -57,12 +55,17 @@ export default function PagamentiScreen() {
           </PressableCard>
         ))}
       </View>
+    </View>
+  );
 
+  return (
+    <View style={styles.container}>
       <FlatList
         style={styles.list}
         contentContainerStyle={styles.listContent}
         data={rows}
         keyExtractor={(r) => r.client.id}
+        ListHeaderComponent={listHeader}
         renderItem={({ item }: { item: ClientPaymentRow }) => (
           <PressableCard onPress={() => router.push(`/client/${item.client.id}`)}>
             <Text style={styles.clientName}>{item.client.name}</Text>
@@ -79,7 +82,8 @@ export default function PagamentiScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, padding: Spacing.md, gap: Spacing.md },
+  container: { flex: 1, padding: Spacing.md },
+  headerContainer: { gap: Spacing.md, marginBottom: Spacing.sm },
   title: { ...Typography.title, color: Colors.ink },
   periodRow: { flexDirection: 'row', gap: Spacing.sm },
   periodButton: {

@@ -5,7 +5,7 @@ import { useAllWorkSessions } from '../features/work-sessions/useWorkSessions';
 import { useAllPayments } from '../features/payments/usePayments';
 import { buildClientPaymentRows } from '../features/payments/clientPaymentRows';
 import type { ClientPaymentRow } from '../features/payments/clientPaymentRows';
-import { PAYMENT_METRICS } from '../features/payments/constants';
+import { PAYMENT_METRICS, PERIOD_LABELS } from '../features/payments/constants';
 import type { PaymentMetric } from '../features/payments/constants';
 import type { Period } from '../features/payments/computeClientSummary';
 import { PressableCard } from '../components/PressableCard';
@@ -19,8 +19,9 @@ export default function PaymentDetailScreen() {
 
   const metricConfig = PAYMENT_METRICS.find((m) => m.key === metric);
   if (!metricConfig) return <Text style={styles.padded}>Metrica non valida.</Text>;
+  const safePeriod: Period = period === 'week' || period === 'month' ? period : 'all';
 
-  const rows = buildClientPaymentRows(clients ?? [], sessions ?? [], payments ?? [], period);
+  const rows = buildClientPaymentRows(clients ?? [], sessions ?? [], payments ?? [], safePeriod);
 
   return (
     <View style={styles.container}>
@@ -28,6 +29,7 @@ export default function PaymentDetailScreen() {
         <Text style={styles.back}>← Indietro</Text>
       </Pressable>
       <Text style={styles.title}>{metricConfig.label}</Text>
+      <Text style={styles.subtitle}>{PERIOD_LABELS[safePeriod]}</Text>
 
       <FlatList
         style={styles.list}
@@ -51,6 +53,7 @@ const styles = StyleSheet.create({
   padded: { padding: Spacing.lg },
   back: { color: Colors.ink, marginBottom: Spacing.xs },
   title: { ...Typography.title, color: Colors.ink },
+  subtitle: { ...Typography.body, color: Colors.inkMuted },
   list: { flex: 1 },
   listContent: { gap: Spacing.sm, paddingTop: Spacing.xs },
   clientName: { ...Typography.bodyBold, color: Colors.ink },
