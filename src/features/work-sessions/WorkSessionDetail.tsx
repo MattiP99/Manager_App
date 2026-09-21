@@ -34,6 +34,7 @@ export function WorkSessionDetail({ session, clientName }: WorkSessionDetailProp
         multiline
       />
       {updateSession.isError && <Text style={styles.error}>{(updateSession.error as Error).message}</Text>}
+      {updateSession.isSuccess && <Text style={styles.meta}>Nota salvata</Text>}
       <Button
         label={updateSession.isPending ? 'Salvataggio...' : 'Salva nota'}
         onPress={handleSave}
