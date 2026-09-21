@@ -121,3 +121,24 @@ export function useCreateWorkSession() {
     },
   });
 }
+
+export function useUpdateWorkSession() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id, note }: { id: string; note: string | null }) => {
+      const { data, error } = await supabase
+        .from('work_sessions')
+        .update({ note })
+        .eq('id', id)
+        .select()
+        .single();
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ['work-session-status', data.client_id] });
+      queryClient.invalidateQueries({ queryKey: ['work-session-status-all'] });
+      queryClient.invalidateQueries({ queryKey: ['work-sessions'] });
+    },
+  });
+}
