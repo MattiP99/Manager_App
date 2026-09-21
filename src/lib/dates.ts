@@ -32,6 +32,22 @@ export function shiftMonth(dateStr: string, direction: 1 | -1): string {
   return toLocalDateString(new Date(d.getFullYear(), d.getMonth() + direction, 1));
 }
 
+/** Lunedì della settimana che contiene dateStr — stessa convenzione Monday-first già usata da calendarGrid.ts (getWeekDays), duplicata qui apposta: dates.ts è un livello più basso di calendarGrid.ts e non deve dipenderne. */
+export function startOfWeek(dateStr: string): string {
+  const d = parseLocalDateString(dateStr);
+  const mondayOffset = (d.getDay() + 6) % 7; // 0=Lun..6=Dom
+  return addDays(dateStr, -mondayOffset);
+}
+
+export function endOfWeek(dateStr: string): string {
+  return addDays(startOfWeek(dateStr), 6);
+}
+
+/** Sposta l'ancora di una settimana di 7 giorni — a differenza di shiftMonth non serve normalizzare al lunedì: chi chiama questa funzione ricava lunedì/domenica separatamente tramite startOfWeek/endOfWeek. */
+export function shiftWeek(dateStr: string, direction: 1 | -1): string {
+  return addDays(dateStr, direction * 7);
+}
+
 /** Postgres `time` columns round-trip through Supabase as "HH:MM:SS" (seconds included) even when only "HH:MM" was ever written — this strips the trailing seconds for display and for re-populating an HH:MM form field. */
 export function toShortTime(value: string): string {
   return value.slice(0, 5);

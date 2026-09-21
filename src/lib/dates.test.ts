@@ -1,4 +1,4 @@
-import { addDays, endOfMonth, formatCompactHour, hoursBetweenTimes, isEndAfterStart, isValidOptionalTimeRange, isValidTimeFormat, isValidTimeRange, parseLocalDateString, shiftMonth, startOfMonth, toLocalDateString, toShortTime } from './dates';
+import { addDays, endOfMonth, endOfWeek, formatCompactHour, hoursBetweenTimes, isEndAfterStart, isValidOptionalTimeRange, isValidTimeFormat, isValidTimeRange, parseLocalDateString, shiftMonth, shiftWeek, startOfMonth, startOfWeek, toLocalDateString, toShortTime } from './dates';
 
 describe('toLocalDateString', () => {
   const originalTZ = process.env.TZ;
@@ -97,6 +97,42 @@ describe('shiftMonth', () => {
 
   it('rolls backward across a year boundary', () => {
     expect(shiftMonth('2026-01-15', -1)).toBe('2025-12-01');
+  });
+});
+
+// 2024-01-01 is a known Monday — used as a fixed reference point instead of
+// guessing the weekday of an arbitrary date.
+describe('startOfWeek', () => {
+  it('returns the same date when it is already a Monday', () => {
+    expect(startOfWeek('2024-01-01')).toBe('2024-01-01');
+  });
+
+  it('returns the preceding Monday for a mid-week date', () => {
+    expect(startOfWeek('2024-01-03')).toBe('2024-01-01');
+  });
+
+  it('returns the preceding Monday for a Sunday (end of the Monday-first week)', () => {
+    expect(startOfWeek('2024-01-07')).toBe('2024-01-01');
+  });
+});
+
+describe('endOfWeek', () => {
+  it('returns the Sunday that closes the week containing dateStr', () => {
+    expect(endOfWeek('2024-01-03')).toBe('2024-01-07');
+  });
+});
+
+describe('shiftWeek', () => {
+  it('moves forward by 7 days', () => {
+    expect(shiftWeek('2024-01-01', 1)).toBe('2024-01-08');
+  });
+
+  it('moves backward by 7 days', () => {
+    expect(shiftWeek('2024-01-08', -1)).toBe('2024-01-01');
+  });
+
+  it('rolls across a month boundary', () => {
+    expect(shiftWeek('2026-09-28', 1)).toBe('2026-10-05');
   });
 });
 

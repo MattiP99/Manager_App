@@ -1,4 +1,4 @@
-import { computeClientSummary, dateRangeForPeriod, filterByDateRange } from './computeClientSummary';
+import { computeClientSummary, dateRangeForAnchor, filterByDateRange, periodLabel } from './computeClientSummary';
 import type { WorkSession } from '../work-sessions/useWorkSessions';
 import type { Payment } from './usePayments';
 
@@ -51,39 +51,64 @@ describe('computeClientSummary', () => {
   });
 });
 
-describe('dateRangeForPeriod', () => {
-  it("returns null for 'all' (pass-through)", () => {
-    expect(dateRangeForPeriod('all')).toBeNull();
+describe('dateRangeForAnchor', () => {
+  // "now" è sempre dopo l'intero periodo testato, così il tetto a oggi
+  // (vedi describe successivo) non interferisce con questi casi base.
+  const wellAfter = new Date(2028, 0, 1);
+
+  it("'week' returns the Monday-Sunday range containing anchorDate", () => {
+    expect(dateRangeForAnchor('week', '2026-09-18', wellAfter)).toEqual({ start: '2026-09-14', end: '2026-09-20' });
   });
 
-  it("'week' is a rolling 7-day window ending today", () => {
-    const now = new Date(2026, 8, 18); // 2026-09-18
-    expect(dateRangeForPeriod('week', now)).toEqual({ start: '2026-09-11', end: '2026-09-18' });
+  it("'month' returns the calendar month containing anchorDate, not a rolling window", () => {
+    expect(dateRangeForAnchor('month', '2026-09-18', wellAfter)).toEqual({ start: '2026-09-01', end: '2026-09-30' });
   });
 
-  it("'month' is a rolling 30-day window, not a calendar month", () => {
-    const now = new Date(2026, 8, 18); // 2026-09-18
-    expect(dateRangeForPeriod('month', now)).toEqual({ start: '2026-08-19', end: '2026-09-18' });
+  it("'month' handles a short month correctly (no rollover into the next month)", () => {
+    expect(dateRangeForAnchor('month', '2027-02-10', wellAfter)).toEqual({ start: '2027-02-01', end: '2027-02-28' });
   });
 
-  it.each([
-    ['2027-03-31', '2027-03-01'],
-    ['2027-03-29', '2027-02-27'],
-    ['2027-05-31', '2027-05-01'],
-    ['2026-10-31', '2026-10-01'],
-  ])('month window for %s starts at %s (no rollover)', (endDate, expectedStart) => {
-    const [y, m, d] = endDate.split('-').map(Number);
-    const now = new Date(y, m - 1, d);
-    expect(dateRangeForPeriod('month', now)).toEqual({ start: expectedStart, end: endDate });
+  it('does not cap the end when the whole period is already in the past', () => {
+    const now = new Date(2026, 8, 25); // 2026-09-25, after the week below ends
+    expect(dateRangeForAnchor('week', '2026-09-18', now)).toEqual({ start: '2026-09-14', end: '2026-09-20' });
+  });
+
+  it('caps the end at today when the anchor is the current week (partly in the future)', () => {
+    const now = new Date(2026, 8, 16); // 2026-09-16, a Wednesday inside that same week
+    expect(dateRangeForAnchor('week', '2026-09-18', now)).toEqual({ start: '2026-09-14', end: '2026-09-16' });
+  });
+
+  it('caps the end at today when the anchor is the current month (partly in the future)', () => {
+    const now = new Date(2026, 8, 10); // 2026-09-10, inside September
+    expect(dateRangeForAnchor('month', '2026-09-18', now)).toEqual({ start: '2026-09-01', end: '2026-09-10' });
+  });
+
+  it('produces an unmatchable range (end before start) for a period entirely in the future', () => {
+    const now = new Date(2026, 8, 1); // 2026-09-01, before the whole week below starts
+    const range = dateRangeForAnchor('week', '2026-09-18', now);
+    expect(range.end < range.start).toBe(true);
+  });
+});
+
+describe('periodLabel', () => {
+  it('formats a month as "Mese Anno"', () => {
+    expect(periodLabel('month', '2026-09-18')).toBe('Settembre 2026');
+  });
+
+  it('formats a week fully inside one month as "D - D Mese Anno"', () => {
+    expect(periodLabel('week', '2026-09-16')).toBe('14 - 20 Settembre 2026');
+  });
+
+  it('formats a week spanning two months', () => {
+    expect(periodLabel('week', '2026-09-29')).toBe('28 Settembre - 4 Ottobre 2026');
+  });
+
+  it('formats a week spanning two years', () => {
+    expect(periodLabel('week', '2026-12-30')).toBe('28 Dicembre 2026 - 3 Gennaio 2027');
   });
 });
 
 describe('filterByDateRange', () => {
-  it('returns items unchanged when range is null', () => {
-    const items = [session({ date: '2026-01-01' })];
-    expect(filterByDateRange(items, null)).toBe(items);
-  });
-
   it('includes items exactly on the start and end boundaries', () => {
     const items = [
       session({ id: 'on-start', date: '2026-09-01' }),

@@ -46,8 +46,8 @@ export function shiftAnchorDate(anchorDate: string, view: CalendarViewMode, dire
 
   // month: keep the same day-of-month, clamped into the target month's
   // actual length instead of letting JS roll the date forward when the
-  // target month is shorter (the same bug class as the fixed
-  // dateRangeForPeriod month-end rollover).
+  // target month is shorter (the same bug class as a past money-totals
+  // bug in this project's payments period filter, since fixed).
   const anchor = parseLocalDateString(anchorDate);
   const day = anchor.getDate();
   const targetMonthFirst = new Date(anchor.getFullYear(), anchor.getMonth() + direction, 1);

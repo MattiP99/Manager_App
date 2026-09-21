@@ -1,5 +1,5 @@
-import { computeClientSummary, dateRangeForPeriod, filterByDateRange } from './computeClientSummary';
-import type { ClientSummary, Period } from './computeClientSummary';
+import { computeClientSummary, dateRangeForAnchor, filterByDateRange } from './computeClientSummary';
+import type { ClientSummary, PaymentPeriodMode } from './computeClientSummary';
 import type { Client } from '../clients/useClients';
 import type { WorkSession } from '../work-sessions/useWorkSessions';
 import type { Payment } from './usePayments';
@@ -9,15 +9,16 @@ export interface ClientPaymentRow {
   summary: ClientSummary;
 }
 
-/** Accoppia ogni cliente al proprio riepilogo (ore/dovuto/ricevuto/saldo), filtrato per periodo — stessa logica prima duplicata inline in pagamenti.tsx, ora condivisa anche dal drill-down per metrica. */
+/** Accoppia ogni cliente al proprio riepilogo (ore/dovuto/ricevuto/saldo), filtrato sulla settimana o sul mese in visualizzazione — stessa logica prima duplicata inline in pagamenti.tsx, ora condivisa anche dal drill-down per metrica. */
 export function buildClientPaymentRows(
   clients: Client[],
   sessions: WorkSession[],
   payments: Payment[],
-  period: Period,
+  mode: PaymentPeriodMode,
+  anchorDate: string,
   now = new Date()
 ): ClientPaymentRow[] {
-  const range = dateRangeForPeriod(period, now);
+  const range = dateRangeForAnchor(mode, anchorDate, now);
   const filteredSessions = filterByDateRange(sessions, range);
   const filteredPayments = filterByDateRange(payments, range);
 
