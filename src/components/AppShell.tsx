@@ -57,9 +57,9 @@ export function AppShell() {
 }
 
 // Sfondo condiviso da ogni schermata dell'app (qui e nelle schermate fuori
-// da AppShell che impostavano Colors.canvas da sole — vedi day/[date].tsx,
-// family-day/[date].tsx, add-work-session.tsx): stesso gradiente ovunque,
-// un'unica fonte di verità per i due colori. Il beige
+// da AppShell che impostavano Colors.canvas da sole — vedi login.tsx,
+// signup.tsx): stesso gradiente ovunque, un'unica fonte di verità per i due
+// colori. Il beige
 // (canvas) è ripetuto come primo E secondo stop per restare "pieno" fino
 // al 65% prima di sfumare verso l'azzurro — un gradiente 2-stop semplice
 // darebbe già metà azzurro a metà altezza, più di quanto chiesto.

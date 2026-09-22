@@ -13,7 +13,7 @@ interface AddWorkSessionFormProps {
   onSaved: () => void;
 }
 
-/** Contenuto del form "Nuova giornata lavorata" — guscio (DetailModal) e contenuto separati, stesso principio di AddExpenseForm. Usato sia dalla rotta add-work-session.tsx (Calendario, nessun cliente preselezionato) sia dal pannello laterale del dettaglio cliente (Pagamenti, clientId già noto). */
+/** Contenuto del form "Nuova giornata lavorata" — guscio (DetailModal) e contenuto separati, stesso principio di AddExpenseForm. Usato sia dal pannello laterale di DayDetailPanel (Calendario, nessun cliente preselezionato) sia da quello del dettaglio cliente (Pagamenti, clientId già noto). Sostituisce l'ex pagina a tutto schermo add-work-session.tsx. */
 export function AddWorkSessionForm({ preselectedClientId, preselectedDate, onSaved }: AddWorkSessionFormProps) {
   const { data: clients } = useClients();
   const [clientId, setClientId] = useState(preselectedClientId ?? '');

@@ -1,7 +1,6 @@
 import { useMemo, useState } from 'react';
 import type { ReactNode } from 'react';
 import { View, Text, StyleSheet, ScrollView, Pressable } from 'react-native';
-import { router } from 'expo-router';
 import { CalendarView } from '../../components/CalendarView';
 import type { CalendarViewMode } from '../../features/calendar/calendarGrid';
 import { useFullWidthContent } from '../../components/AppShell';
@@ -9,12 +8,14 @@ import { DetailModal } from '../../components/DetailModal';
 import { useAllWorkSessionsStatus } from '../../features/work-sessions/useWorkSessions';
 import type { WorkSessionStatus } from '../../features/work-sessions/useWorkSessions';
 import { WorkSessionDetail } from '../../features/work-sessions/WorkSessionDetail';
+import { DayDetailPanel } from '../../features/work-sessions/DayDetailPanel';
 import { useClients } from '../../features/clients/useClients';
 import { useRecurringTemplates } from '../../features/family-calendar/useRecurringTemplates';
 import { useAllCalendarEvents } from '../../features/family-calendar/useCalendarEvents';
 import { expandOccurrences } from '../../features/family-calendar/recurringOccurrences';
 import type { Occurrence } from '../../features/family-calendar/recurringOccurrences';
 import { FamilyOccurrenceDetail } from '../../features/family-calendar/FamilyOccurrenceDetail';
+import { FamilyDayDetailPanel } from '../../features/family-calendar/FamilyDayDetailPanel';
 import { FAMILY_CATEGORY_COLORS } from '../../features/family-calendar/constants';
 import { splitByHalfDay } from '../../features/calendar/dayHalves';
 import { addDays, formatCompactHour, toLocalDateString, toShortTime } from '../../lib/dates';
@@ -106,6 +107,8 @@ export default function CalendarioScreen() {
   const [section, setSection] = useState<CalendarSection>('lavoro');
   const [selectedSession, setSelectedSession] = useState<WorkSessionStatus | null>(null);
   const [selectedOccurrence, setSelectedOccurrence] = useState<Occurrence | null>(null);
+  const [openDayDate, setOpenDayDate] = useState<string | null>(null);
+  const [openFamilyDayDate, setOpenFamilyDayDate] = useState<string | null>(null);
 
   const { data: sessions } = useAllWorkSessionsStatus();
   const { data: clients } = useClients();
@@ -173,7 +176,7 @@ export default function CalendarioScreen() {
               )}
             />
           )}
-          onDayPress={(date) => router.push(`/day/${date}`)}
+          onDayPress={(date) => setOpenDayDate(date)}
         />
       ) : (
         <CalendarView
@@ -187,7 +190,7 @@ export default function CalendarioScreen() {
               )}
             />
           )}
-          onDayPress={(date) => router.push(`/family-day/${date}`)}
+          onDayPress={(date) => setOpenFamilyDayDate(date)}
         />
       )}
 
@@ -197,6 +200,14 @@ export default function CalendarioScreen() {
 
       <DetailModal visible={!!selectedOccurrence} onClose={() => setSelectedOccurrence(null)}>
         {selectedOccurrence && <FamilyOccurrenceDetail occurrence={selectedOccurrence} />}
+      </DetailModal>
+
+      <DetailModal visible={!!openDayDate} onClose={() => setOpenDayDate(null)} variant="sheet">
+        {openDayDate && <DayDetailPanel date={openDayDate} />}
+      </DetailModal>
+
+      <DetailModal visible={!!openFamilyDayDate} onClose={() => setOpenFamilyDayDate(null)} variant="sheet">
+        {openFamilyDayDate && <FamilyDayDetailPanel date={openFamilyDayDate} />}
       </DetailModal>
     </ScrollView>
   );
