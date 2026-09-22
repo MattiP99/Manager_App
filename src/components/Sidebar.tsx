@@ -2,6 +2,7 @@ import { Feather } from '@expo/vector-icons';
 import { Link, usePathname } from 'expo-router';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { isNavItemActive, NAV_ITEMS } from '../lib/navigation';
+import { Logo } from './Logo';
 import { Colors, Radii, Spacing, Typography } from '../lib/theme';
 
 const SIDEBAR_WIDTH = 220;
@@ -11,6 +12,9 @@ export function Sidebar() {
 
   return (
     <View style={styles.container}>
+      <View style={styles.logoRow}>
+        <Logo size={44} />
+      </View>
       {NAV_ITEMS.map((item) => {
         const active = isNavItemActive(pathname, item.href);
         const iconColor = active ? Colors.accent : Colors.ink;
@@ -40,6 +44,10 @@ const styles = StyleSheet.create({
     paddingVertical: Spacing.xl,
     paddingHorizontal: Spacing.md,
     gap: Spacing.xs,
+  },
+  logoRow: {
+    alignItems: 'center',
+    marginBottom: Spacing.md,
   },
   item: {
     flexDirection: 'row',

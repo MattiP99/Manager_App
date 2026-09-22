@@ -1,10 +1,12 @@
 import { useEffect, useState } from 'react';
 import { View, Text, TextInput, Pressable, StyleSheet, ScrollView, useWindowDimensions } from 'react-native';
-import { router } from 'expo-router';
 import { useNoteSections, useConfigurePasswordSection } from './useNoteSections';
 import { useNotesBySection } from './useNotes';
 import { setupPasswordSection, unlockPasswordSection, decryptText, loadVerifiedKey } from './crypto/aesNotes';
 import { storeKey } from './crypto/secureKeyStore';
+import { AddNoteForm } from './AddNoteForm';
+import { EditNoteForm } from './EditNoteForm';
+import { DetailModal } from '../../components/DetailModal';
 import { formatDayLabel } from '../calendar/calendarGrid';
 import { toLocalDateString } from '../../lib/dates';
 import { truncateWords } from '../../lib/text';
@@ -30,7 +32,10 @@ export function NoteSectionDetail({ sectionId, onClose }: NoteSectionDetailProps
   const [passphrase, setPassphrase] = useState('');
   const [unlockError, setUnlockError] = useState<string | null>(null);
   const [decryptedContent, setDecryptedContent] = useState<Record<string, string>>({});
+  const [decryptErrorIds, setDecryptErrorIds] = useState<Set<string>>(new Set());
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [addingNote, setAddingNote] = useState(false);
+  const [editingNoteId, setEditingNoteId] = useState<string | null>(null);
 
   const isPasswordSection = section?.type === 'password';
 
@@ -47,16 +52,18 @@ export function NoteSectionDetail({ sectionId, onClose }: NoteSectionDetailProps
     let cancelled = false;
     Promise.all(
       notes.map(async (n) => {
-        if (!n.content_encrypted) return [n.id, ''] as const;
+        if (!n.content_encrypted) return [n.id, '', false] as const;
         try {
           const plain = await decryptText(n.content_encrypted, key);
-          return [n.id, plain] as const;
+          return [n.id, plain, false] as const;
         } catch {
-          return [n.id, '(errore di decifratura)'] as const;
+          return [n.id, '(errore di decifratura)', true] as const;
         }
       })
     ).then((entries) => {
-      if (!cancelled) setDecryptedContent(Object.fromEntries(entries));
+      if (cancelled) return;
+      setDecryptedContent(Object.fromEntries(entries.map(([id, text]) => [id, text])));
+      setDecryptErrorIds(new Set(entries.filter(([, , failed]) => failed).map(([id]) => id)));
     });
     return () => {
       cancelled = true;
@@ -97,15 +104,8 @@ export function NoteSectionDetail({ sectionId, onClose }: NoteSectionDetailProps
     }
   };
 
-  // Il modale (DetailModal) resta montato sopra la navigazione: si chiude
-  // prima di navigare così l'utente non si ritrova la pagina di
-  // aggiunta/modifica nota dietro una finestra ancora aperta.
-  const goToNote = (pathname: '/add-note' | '/edit-note', params: Record<string, string>) => {
-    onClose();
-    router.push({ pathname, params });
-  };
-
   const locked = isPasswordSection && checkedStoredKey && !key;
+  const editingNote = notes?.find((n) => n.id === editingNoteId) ?? null;
 
   return (
     <ScrollView style={{ maxHeight: height * 0.6 }} contentContainerStyle={styles.container}>
@@ -137,7 +137,7 @@ export function NoteSectionDetail({ sectionId, onClose }: NoteSectionDetailProps
 
       {(!isPasswordSection || key) && (
         <>
-          <Pressable style={styles.addButton} onPress={() => goToNote('/add-note', { sectionId: section.id })}>
+          <Pressable style={styles.addButton} onPress={() => setAddingNote(true)}>
             <Text style={styles.addButtonText}>+ Nota</Text>
           </Pressable>
 
@@ -145,11 +145,7 @@ export function NoteSectionDetail({ sectionId, onClose }: NoteSectionDetailProps
           {(notes ?? []).map((item) => {
             const fullContent = isPasswordSection ? decryptedContent[item.id] ?? '...' : item.content ?? '';
             return (
-              <Pressable
-                key={item.id}
-                style={styles.row}
-                onPress={() => goToNote('/edit-note', { id: item.id, sectionId: section.id })}
-              >
+              <Pressable key={item.id} style={styles.row} onPress={() => setEditingNoteId(item.id)}>
                 <View style={styles.rowHeader}>
                   <Text style={styles.rowTitle}>{item.title}</Text>
                   <Text style={styles.rowDate}>{formatDayLabel(toLocalDateString(new Date(item.created_at)))}</Text>
@@ -162,6 +158,23 @@ export function NoteSectionDetail({ sectionId, onClose }: NoteSectionDetailProps
           })}
         </>
       )}
+
+      <DetailModal visible={addingNote} onClose={() => setAddingNote(false)} variant="sheet">
+        <AddNoteForm section={section} encryptionKey={key} onSaved={() => setAddingNote(false)} />
+      </DetailModal>
+
+      <DetailModal visible={!!editingNote} onClose={() => setEditingNoteId(null)} variant="sheet">
+        {editingNote && (
+          <EditNoteForm
+            section={section}
+            note={editingNote}
+            initialContent={isPasswordSection ? decryptedContent[editingNote.id] ?? '' : editingNote.content ?? ''}
+            decryptError={decryptErrorIds.has(editingNote.id)}
+            encryptionKey={key}
+            onSaved={() => setEditingNoteId(null)}
+          />
+        )}
+      </DetailModal>
     </ScrollView>
   );
 }

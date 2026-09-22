@@ -1,12 +1,7 @@
 import { FAMILY_CATEGORIES } from '../family-calendar/constants';
-import type { ExpenseCategory } from './expenseSummary';
 
-export const EXPENSE_CATEGORIES: { value: ExpenseCategory; label: string }[] = [
-  { value: 'supermercato', label: 'Supermercato' },
-  { value: 'frutta_verdura', label: 'Frutta e verdura' },
-  { value: 'extra', label: 'Extra' },
-  { value: 'francesca', label: 'Francesca' },
-];
+// EXPENSE_CATEGORIES (elenco statico) rimosso da migrazione 0013 — le
+// categorie sono ora per-famiglia, caricate via useExpenseCategories().
 
 // Le 6 attività di Francesca (incluso 'altro', vedi migrazione 0012)
 // coincidono esattamente con FamilyCategory — stesso elenco del Calendario,

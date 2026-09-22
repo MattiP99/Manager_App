@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { View, Text, TextInput, Pressable, StyleSheet } from 'react-native';
 import { useDeleteExpense, useUpdateExpense } from './useExpenses';
-import { EXPENSE_CATEGORIES, FRANCESCA_ACTIVITIES } from './constants';
+import { FRANCESCA_ACTIVITIES } from './constants';
 import { labelPlaceholder } from './AddExpenseForm';
 import type { Expense, FrancescaActivity } from './expenseSummary';
 import { Button } from '../../components/Button';
@@ -9,19 +9,18 @@ import { Colors, Radii, Spacing, Typography } from '../../lib/theme';
 
 interface EditExpenseFormProps {
   expense: Expense;
+  categoryLabel: string;
   onSaved: () => void;
 }
 
-/** Contenuto del modale "Modifica spesa" — guscio (DetailModal) e contenuto separati, stesso principio di AddExpenseForm. La spesa arriva già caricata da spese.tsx (useAllExpenses), niente fetch duplicato per id. */
-export function EditExpenseForm({ expense, onSaved }: EditExpenseFormProps) {
+/** Contenuto del modale "Modifica spesa" — guscio (DetailModal) e contenuto separati, stesso principio di AddExpenseForm. La spesa arriva già caricata da spese.tsx (useAllExpenses); categoryLabel arriva da lì (categorie ora dinamiche per famiglia, migrazione 0013 — niente più lookup su un array statico). */
+export function EditExpenseForm({ expense, categoryLabel, onSaved }: EditExpenseFormProps) {
   const [francescaActivity, setFrancescaActivity] = useState<FrancescaActivity | null>(expense.francesca_activity);
   const [amount, setAmount] = useState(String(expense.amount));
   const [date, setDate] = useState(expense.date);
   const [label, setLabel] = useState(expense.label ?? '');
   const updateExpense = useUpdateExpense();
   const deleteExpense = useDeleteExpense();
-
-  const categoryLabel = EXPENSE_CATEGORIES.find((c) => c.value === expense.category)?.label ?? expense.category;
 
   const handleSave = () => {
     if (!/^\d+([.,]\d{1,2})?$/.test(amount.trim())) return;

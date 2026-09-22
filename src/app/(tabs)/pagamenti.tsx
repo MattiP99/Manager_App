@@ -1,6 +1,5 @@
 import { useState } from 'react';
 import { View, Text, Pressable, StyleSheet, FlatList } from 'react-native';
-import { router } from 'expo-router';
 import { useClients } from '../../features/clients/useClients';
 import { useAllWorkSessions } from '../../features/work-sessions/useWorkSessions';
 import { useAllPayments } from '../../features/payments/usePayments';
@@ -9,13 +8,23 @@ import type { PaymentPeriodMode } from '../../features/payments/computeClientSum
 import { buildClientPaymentRows } from '../../features/payments/clientPaymentRows';
 import type { ClientPaymentRow } from '../../features/payments/clientPaymentRows';
 import { PAYMENT_METRICS, PERIOD_LABELS } from '../../features/payments/constants';
+import type { PaymentMetric } from '../../features/payments/constants';
+import { PaymentMetricList } from '../../features/payments/PaymentMetricList';
+import { AddPaymentForm } from '../../features/payments/AddPaymentForm';
+import { AddWorkSessionForm } from '../../features/work-sessions/AddWorkSessionForm';
+import { ClientDetailPanel } from '../../features/clients/ClientDetailPanel';
 import { PressableCard } from '../../components/PressableCard';
+import { DetailModal } from '../../components/DetailModal';
 import { shiftMonth, shiftWeek, toLocalDateString } from '../../lib/dates';
 import { Colors, Fonts, Radii, Spacing, Typography } from '../../lib/theme';
 
 export default function PagamentiScreen() {
   const [mode, setMode] = useState<PaymentPeriodMode>('week');
   const [anchorDate, setAnchorDate] = useState(() => toLocalDateString(new Date()));
+  const [openMetric, setOpenMetric] = useState<PaymentMetric | null>(null);
+  const [openClientId, setOpenClientId] = useState<string | null>(null);
+  const [addingWorkSessionFor, setAddingWorkSessionFor] = useState<string | null>(null);
+  const [addingPaymentFor, setAddingPaymentFor] = useState<string | null>(null);
   const { data: clients } = useClients();
   const { data: sessions } = useAllWorkSessions();
   const { data: payments } = useAllPayments();
@@ -63,10 +72,7 @@ export default function PagamentiScreen() {
 
       <View style={styles.summaryGrid}>
         {PAYMENT_METRICS.map((metric) => (
-          <PressableCard
-            key={metric.key}
-            onPress={() => router.push({ pathname: '/payment-detail', params: { metric: metric.key, mode, anchorDate } })}
-          >
+          <PressableCard key={metric.key} onPress={() => setOpenMetric(metric.key)}>
             <Text style={styles.summaryLabel}>{metric.label}</Text>
             <Text style={styles.summaryValue}>{metric.format(grandTotal[metric.key])}</Text>
           </PressableCard>
@@ -84,7 +90,7 @@ export default function PagamentiScreen() {
         keyExtractor={(r) => r.client.id}
         ListHeaderComponent={listHeader}
         renderItem={({ item }: { item: ClientPaymentRow }) => (
-          <PressableCard onPress={() => router.push(`/client/${item.client.id}`)}>
+          <PressableCard onPress={() => setOpenClientId(item.client.id)}>
             <Text style={styles.clientName}>{item.client.name}</Text>
             <Text style={styles.clientMeta}>
               {item.summary.totalHours.toFixed(2)}h — dovuto €{item.summary.totalDue.toFixed(2)} — ricevuto €{item.summary.totalPaid.toFixed(2)}
@@ -94,6 +100,34 @@ export default function PagamentiScreen() {
         )}
         ListEmptyComponent={<Text style={styles.empty}>Nessun cliente ancora.</Text>}
       />
+
+      <DetailModal visible={!!openMetric} onClose={() => setOpenMetric(null)} variant="sheet">
+        {openMetric && (
+          <PaymentMetricList metric={openMetric} mode={mode} anchorDate={anchorDate} onSelectClient={setOpenClientId} />
+        )}
+      </DetailModal>
+
+      <DetailModal visible={!!openClientId} onClose={() => setOpenClientId(null)} variant="sheet">
+        {openClientId && (
+          <ClientDetailPanel
+            clientId={openClientId}
+            onAddWorkSession={() => setAddingWorkSessionFor(openClientId)}
+            onAddPayment={() => setAddingPaymentFor(openClientId)}
+          />
+        )}
+      </DetailModal>
+
+      <DetailModal visible={!!addingWorkSessionFor} onClose={() => setAddingWorkSessionFor(null)} variant="side">
+        {addingWorkSessionFor && (
+          <AddWorkSessionForm preselectedClientId={addingWorkSessionFor} onSaved={() => setAddingWorkSessionFor(null)} />
+        )}
+      </DetailModal>
+
+      <DetailModal visible={!!addingPaymentFor} onClose={() => setAddingPaymentFor(null)} variant="side">
+        {addingPaymentFor && (
+          <AddPaymentForm clientId={addingPaymentFor} onSaved={() => setAddingPaymentFor(null)} />
+        )}
+      </DetailModal>
     </View>
   );
 }

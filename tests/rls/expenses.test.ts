@@ -23,6 +23,64 @@ describe('expenses RLS isolation and constraints', () => {
     if (userBId) await admin.auth.admin.deleteUser(userBId);
   });
 
+  it('create_household bootstraps exactly the 4 default expense categories with correct slug/label/sort_order', async () => {
+    const clientA = await signInAs(userAEmail, password);
+    const { data: household } = await clientA.rpc('create_household', { p_name: 'Household A Expense Categories Bootstrap Test' });
+    createdHouseholdIds.push(household.id);
+
+    const { data: categories, error } = await clientA
+      .from('expense_categories')
+      .select('slug, label, sort_order')
+      .eq('household_id', household.id)
+      .order('sort_order', { ascending: true });
+
+    expect(error).toBeNull();
+    expect(categories).toEqual([
+      { slug: 'supermercato', label: 'Supermercato', sort_order: 0 },
+      { slug: 'frutta_verdura', label: 'Frutta e verdura', sort_order: 1 },
+      { slug: 'extra', label: 'Extra', sort_order: 2 },
+      { slug: 'francesca', label: 'Francesca', sort_order: 3 },
+    ]);
+  });
+
+  it('a user cannot see or write expense_categories from another household', async () => {
+    const clientA = await signInAs(userAEmail, password);
+    const { data: householdA } = await clientA.rpc('create_household', { p_name: 'Household A Expense Categories Isolation Test' });
+    createdHouseholdIds.push(householdA.id);
+
+    const clientB = await signInAs(userBEmail, password);
+    const { data: visibleCategories } = await clientB
+      .from('expense_categories')
+      .select('*')
+      .eq('household_id', householdA.id);
+    expect(visibleCategories).toEqual([]);
+
+    const insertAttempt = await clientB
+      .from('expense_categories')
+      .insert({ household_id: householdA.id, label: 'Intrusione' });
+    expect(insertAttempt.error).not.toBeNull();
+  });
+
+  it('a user can create a custom expense category and log an expense against it', async () => {
+    const clientA = await signInAs(userAEmail, password);
+    const { data: household } = await clientA.rpc('create_household', { p_name: 'Household A Custom Category Test' });
+    createdHouseholdIds.push(household.id);
+
+    const { data: category, error: createError } = await clientA
+      .from('expense_categories')
+      .insert({ household_id: household.id, label: 'Casa', sort_order: 4 })
+      .select('id, slug, label')
+      .single();
+    expect(createError).toBeNull();
+    expect(category!.label).toBe('Casa');
+    expect(category!.slug).toBeTruthy(); // generato dal default DB, mai passato dal client
+
+    const { error: expenseError } = await clientA
+      .from('expenses')
+      .insert({ household_id: household.id, category: category!.slug, amount: 30, date: '2026-09-20' });
+    expect(expenseError).toBeNull();
+  });
+
   it('a user cannot see or write expenses from another household', async () => {
     const clientA = await signInAs(userAEmail, password);
     const { data: householdA } = await clientA.rpc('create_household', { p_name: 'Household A Expenses Test' });

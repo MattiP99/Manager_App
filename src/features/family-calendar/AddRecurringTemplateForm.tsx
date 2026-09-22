@@ -1,12 +1,18 @@
 import { useState } from 'react';
-import { View, TextInput, Text, Pressable, StyleSheet, ScrollView } from 'react-native';
-import { router } from 'expo-router';
-import { useCreateRecurringTemplate } from '../features/family-calendar/useRecurringTemplates';
-import { FAMILY_CATEGORIES, WEEKDAY_OPTIONS } from '../features/family-calendar/constants';
-import { isValidTimeRange } from '../lib/dates';
-import type { FamilyCategory } from '../features/family-calendar/recurringOccurrences';
+import { View, Text, TextInput, Pressable, StyleSheet, ScrollView, useWindowDimensions } from 'react-native';
+import { useCreateRecurringTemplate } from './useRecurringTemplates';
+import { FAMILY_CATEGORIES, WEEKDAY_OPTIONS } from './constants';
+import { isValidTimeRange } from '../../lib/dates';
+import type { FamilyCategory } from './recurringOccurrences';
+import { Button } from '../../components/Button';
+import { Colors, Radii, Spacing, Typography } from '../../lib/theme';
 
-export default function AddRecurringTemplateScreen() {
+interface AddRecurringTemplateFormProps {
+  onSaved: () => void;
+}
+
+/** Contenuto del modale "Nuovo impegno ricorrente" — guscio (DetailModal, chiamato da impostazioni.tsx) e contenuto separati, stesso principio già usato per AddExpenseForm/AddNoteSectionForm. Sostituisce l'ex pagina a tutto schermo add-recurring-template.tsx. ScrollView interna con maxHeight (pattern di NoteSectionDetail): il form ha troppi campi per stare sempre nella card di default. */
+export function AddRecurringTemplateForm({ onSaved }: AddRecurringTemplateFormProps) {
   const [title, setTitle] = useState('');
   const [category, setCategory] = useState<FamilyCategory>('altro');
   const [person, setPerson] = useState('Francesca');
@@ -16,6 +22,7 @@ export default function AddRecurringTemplateScreen() {
   const [note, setNote] = useState('');
   const [validationError, setValidationError] = useState<string | null>(null);
   const createTemplate = useCreateRecurringTemplate();
+  const { height } = useWindowDimensions();
 
   const handleSubmit = () => {
     if (!title.trim() || !person.trim() || weekday === null) return;
@@ -26,12 +33,12 @@ export default function AddRecurringTemplateScreen() {
     setValidationError(null);
     createTemplate.mutate(
       { title: title.trim(), category, person: person.trim(), weekday, startTime, endTime, note: note.trim() || undefined },
-      { onSuccess: () => router.back() }
+      { onSuccess: onSaved }
     );
   };
 
   return (
-    <ScrollView contentContainerStyle={styles.container}>
+    <ScrollView style={{ maxHeight: height * 0.7 }} contentContainerStyle={styles.container}>
       <Text style={styles.title}>Nuovo impegno ricorrente</Text>
       <TextInput style={styles.input} placeholder="Titolo (es. Piscina)" value={title} onChangeText={setTitle} />
 
@@ -43,7 +50,7 @@ export default function AddRecurringTemplateScreen() {
             style={[styles.option, category === c.value && styles.optionSelected]}
             onPress={() => setCategory(c.value)}
           >
-            <Text>{c.label}</Text>
+            <Text style={category === c.value ? styles.optionTextSelected : styles.optionText}>{c.label}</Text>
           </Pressable>
         ))}
       </View>
@@ -58,7 +65,7 @@ export default function AddRecurringTemplateScreen() {
             style={[styles.option, weekday === w.value && styles.optionSelected]}
             onPress={() => setWeekday(w.value)}
           >
-            <Text>{w.label}</Text>
+            <Text style={weekday === w.value ? styles.optionTextSelected : styles.optionText}>{w.label}</Text>
           </Pressable>
         ))}
       </View>
@@ -71,28 +78,39 @@ export default function AddRecurringTemplateScreen() {
 
       {validationError && <Text style={styles.error}>{validationError}</Text>}
       {createTemplate.isError && <Text style={styles.error}>{(createTemplate.error as Error).message}</Text>}
-      <Pressable style={styles.button} onPress={handleSubmit} disabled={createTemplate.isPending}>
-        <Text style={styles.buttonText}>{createTemplate.isPending ? 'Salvataggio...' : 'Salva'}</Text>
-      </Pressable>
-      <Pressable onPress={() => router.back()}>
-        <Text style={styles.cancel}>Annulla</Text>
-      </Pressable>
+      <Button
+        label={createTemplate.isPending ? 'Salvataggio...' : 'Salva'}
+        onPress={handleSubmit}
+        disabled={createTemplate.isPending}
+      />
     </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flexGrow: 1, justifyContent: 'center', padding: 24, gap: 12 },
-  title: { fontSize: 22, fontWeight: '600', marginBottom: 4 },
-  label: { fontWeight: '600' },
-  input: { borderWidth: 1, borderColor: '#ccc', borderRadius: 8, padding: 12 },
-  optionsRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
-  option: { borderWidth: 1, borderColor: '#ccc', borderRadius: 8, paddingVertical: 8, paddingHorizontal: 12 },
-  optionSelected: { backgroundColor: '#dbeafe', borderColor: '#2563eb' },
-  timeRow: { flexDirection: 'row', gap: 8 },
+  container: { gap: Spacing.sm },
+  title: { ...Typography.title, color: Colors.ink },
+  label: { ...Typography.bodyBold, color: Colors.ink },
+  input: {
+    borderWidth: 1,
+    borderColor: Colors.hairline,
+    borderRadius: Radii.sm,
+    padding: Spacing.sm,
+    ...Typography.body,
+    color: Colors.ink,
+  },
+  optionsRow: { flexDirection: 'row', flexWrap: 'wrap', gap: Spacing.xs },
+  option: {
+    borderWidth: 1,
+    borderColor: Colors.hairline,
+    borderRadius: Radii.sm,
+    paddingVertical: Spacing.xs,
+    paddingHorizontal: Spacing.sm,
+  },
+  optionSelected: { borderColor: Colors.accent, backgroundColor: Colors.canvas },
+  optionText: { ...Typography.body, color: Colors.inkMuted },
+  optionTextSelected: { ...Typography.bodyBold, color: Colors.ink },
+  timeRow: { flexDirection: 'row', gap: Spacing.sm },
   timeInput: { flex: 1 },
-  button: { backgroundColor: '#2563eb', borderRadius: 8, padding: 14, alignItems: 'center' },
-  buttonText: { color: 'white', fontWeight: '600' },
-  error: { color: '#dc2626' },
-  cancel: { textAlign: 'center', marginTop: 8 },
+  error: { ...Typography.body, color: Colors.error },
 });

@@ -1,6 +1,10 @@
 import type { FamilyCategory } from '../family-calendar/recurringOccurrences';
 
-export type ExpenseCategory = 'supermercato' | 'frutta_verdura' | 'extra' | 'francesca';
+// Dinamica per-famiglia da migrazione 0013 (expense_categories) — non più un
+// elenco fisso. 'francesca'/'extra' restano slug letterali permanenti (mai
+// rinominabili dall'utente), per questo i confronti === 'francesca'/'extra'
+// sparsi nel codice restano validi anche con questo tipo allargato a string.
+export type ExpenseCategory = string;
 // 'altro' era escluso qui perché non c'era un caso d'uso per una spesa
 // Francesca "generica" — ora c'è (vedi migrazione 0012), quindi riusa
 // l'intero FamilyCategory invece di escluderne un valore.

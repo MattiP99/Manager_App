@@ -1,11 +1,13 @@
 import { useState } from 'react';
 import { View, Text, Pressable, StyleSheet, ScrollView, Platform, useWindowDimensions } from 'react-native';
 import { useAllExpenses } from '../../features/expenses/useExpenses';
-import { EXPENSE_CATEGORIES, FRANCESCA_ACTIVITIES } from '../../features/expenses/constants';
+import { useExpenseCategories } from '../../features/expenses/useExpenseCategories';
+import { FRANCESCA_ACTIVITIES } from '../../features/expenses/constants';
 import { summarizeByCategory, summarizeFrancescaByActivity } from '../../features/expenses/expenseSummary';
-import type { Expense, ExpenseCategory } from '../../features/expenses/expenseSummary';
+import type { Expense } from '../../features/expenses/expenseSummary';
 import { AddExpenseForm } from '../../features/expenses/AddExpenseForm';
 import { EditExpenseForm } from '../../features/expenses/EditExpenseForm';
+import { AddExpenseCategoryForm } from '../../features/expenses/AddExpenseCategoryForm';
 import { dateRangeForAnchor, filterByDateRange, periodLabel } from '../../features/payments/computeClientSummary';
 import type { PaymentPeriodMode } from '../../features/payments/computeClientSummary';
 import { shiftMonth, shiftWeek, toLocalDateString } from '../../lib/dates';
@@ -18,9 +20,11 @@ import { Colors, Fonts, Radii, Spacing, Typography } from '../../lib/theme';
 export default function SpeseScreen() {
   const [mode, setMode] = useState<PaymentPeriodMode>('month');
   const [anchorDate, setAnchorDate] = useState(() => toLocalDateString(new Date()));
-  const [addingCategory, setAddingCategory] = useState<ExpenseCategory | null>(null);
+  const [addingCategorySlug, setAddingCategorySlug] = useState<string | null>(null);
   const [editingExpense, setEditingExpense] = useState<Expense | null>(null);
+  const [addingSection, setAddingSection] = useState(false);
   const { data: expenses } = useAllExpenses();
+  const { data: categories } = useExpenseCategories();
   const { width } = useWindowDimensions();
   const isWideWeb = Platform.OS === 'web' && isWideLayout(width);
 
@@ -30,11 +34,14 @@ export default function SpeseScreen() {
 
   const range = dateRangeForAnchor(mode, anchorDate);
   const periodExpenses = filterByDateRange(expenses ?? [], range);
-  const categorySummaries = summarizeByCategory(periodExpenses, EXPENSE_CATEGORIES.map((c) => c.value));
+  const categorySummaries = summarizeByCategory(periodExpenses, (categories ?? []).map((c) => c.slug));
   const francescaActivitySummaries = summarizeFrancescaByActivity(periodExpenses, FRANCESCA_ACTIVITIES.map((a) => a.value));
 
-  const addingCategoryLabel = addingCategory
-    ? EXPENSE_CATEGORIES.find((c) => c.value === addingCategory)?.label ?? addingCategory
+  // Categorie ora per-famiglia (migrazione 0013), niente più lookup su un
+  // array statico — categories arriva da useExpenseCategories().
+  const addingCategory = (categories ?? []).find((c) => c.slug === addingCategorySlug) ?? null;
+  const editingCategoryLabel = editingExpense
+    ? (categories ?? []).find((c) => c.slug === editingExpense.category)?.label ?? editingExpense.category
     : '';
 
   return (
@@ -63,15 +70,21 @@ export default function SpeseScreen() {
         </Pressable>
       </View>
 
+      <View style={styles.addSectionRow}>
+        <Pressable style={styles.addSectionButton} onPress={() => setAddingSection(true)}>
+          <Text style={styles.addSectionButtonText}>+ Sezione</Text>
+        </Pressable>
+      </View>
+
       <ScrollView style={{ flex: 1 }} contentContainerStyle={styles.sections}>
         {categorySummaries.map((summary) => {
-          const meta = EXPENSE_CATEGORIES.find((c) => c.value === summary.category)!;
+          const meta = (categories ?? []).find((c) => c.slug === summary.category)!;
           return (
             <Card key={summary.category} style={styles.card}>
               <View style={styles.cardHeader}>
                 <Text style={[styles.cardTitle, isWideWeb && styles.cardTitleWide]}>{meta.label}</Text>
                 <Text style={styles.cardTotal}>€{summary.total.toFixed(2)}</Text>
-                <Pressable style={styles.addButton} onPress={() => setAddingCategory(summary.category)}>
+                <Pressable style={styles.addButton} onPress={() => setAddingCategorySlug(summary.category)}>
                   <Text style={styles.addButtonText}>+</Text>
                 </Pressable>
               </View>
@@ -109,19 +122,25 @@ export default function SpeseScreen() {
         })}
       </ScrollView>
 
-      <DetailModal visible={!!addingCategory} onClose={() => setAddingCategory(null)}>
+      <DetailModal visible={!!addingCategory} onClose={() => setAddingCategorySlug(null)}>
         {addingCategory && (
           <AddExpenseForm
-            category={addingCategory}
-            categoryLabel={addingCategoryLabel}
+            category={addingCategory.slug}
+            categoryLabel={addingCategory.label}
             initialDate={anchorDate}
-            onSaved={() => setAddingCategory(null)}
+            onSaved={() => setAddingCategorySlug(null)}
           />
         )}
       </DetailModal>
 
       <DetailModal visible={!!editingExpense} onClose={() => setEditingExpense(null)}>
-        {editingExpense && <EditExpenseForm expense={editingExpense} onSaved={() => setEditingExpense(null)} />}
+        {editingExpense && (
+          <EditExpenseForm expense={editingExpense} categoryLabel={editingCategoryLabel} onSaved={() => setEditingExpense(null)} />
+        )}
+      </DetailModal>
+
+      <DetailModal visible={addingSection} onClose={() => setAddingSection(false)}>
+        <AddExpenseCategoryForm onSaved={() => setAddingSection(false)} />
       </DetailModal>
     </View>
   );
@@ -160,6 +179,11 @@ const styles = StyleSheet.create({
   anchorArrowButton: { padding: Spacing.xs },
   anchorArrow: { fontSize: 20, fontWeight: '600', color: Colors.ink },
   anchorLabel: { ...Typography.bodyBold, color: Colors.ink, minWidth: 160, textAlign: 'center' },
+  // Bottone "+ Sezione" — stesso stile/posizione (allineato a destra) di
+  // "+ Sezione" in Note, per creare una nuova categoria spesa custom.
+  addSectionRow: { flexDirection: 'row', justifyContent: 'flex-end' },
+  addSectionButton: { backgroundColor: Colors.accent, borderRadius: Radii.sm, paddingVertical: Spacing.sm, paddingHorizontal: Spacing.md },
+  addSectionButtonText: { ...Typography.bodyBold, color: Colors.ink },
   sections: { gap: Spacing.md, paddingBottom: Spacing.xl },
   card: { gap: Spacing.xs },
   // Spazio tra il titolo categoria e la prima riga di spesa — almeno

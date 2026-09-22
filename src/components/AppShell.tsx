@@ -4,6 +4,7 @@ import { StyleSheet, useWindowDimensions, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { BottomTabBar } from './BottomTabBar';
+import { MobileHeaderBar } from './MobileHeaderBar';
 import { Sidebar } from './Sidebar';
 import { isWideLayout } from '../lib/layout';
 import { Colors } from '../lib/theme';
@@ -45,6 +46,7 @@ export function AppShell() {
   return (
     <LinearGradient colors={GRADIENT_COLORS} locations={GRADIENT_LOCATIONS} style={styles.fill}>
       <SafeAreaView style={styles.column} edges={['top']}>
+        <MobileHeaderBar />
         <View style={styles.mobileContent}>
           <Slot />
         </View>
@@ -54,10 +56,10 @@ export function AppShell() {
   );
 }
 
-// Sfondo condiviso da ogni schermata dell'app (qui e nelle 3 schermate
-// fuori da AppShell che impostavano Colors.canvas da sole — vedi
-// day/[date].tsx, family-day/[date].tsx, payment-detail.tsx): stesso
-// gradiente ovunque, un'unica fonte di verità per i due colori. Il beige
+// Sfondo condiviso da ogni schermata dell'app (qui e nelle schermate fuori
+// da AppShell che impostavano Colors.canvas da sole — vedi day/[date].tsx,
+// family-day/[date].tsx, add-work-session.tsx): stesso gradiente ovunque,
+// un'unica fonte di verità per i due colori. Il beige
 // (canvas) è ripetuto come primo E secondo stop per restare "pieno" fino
 // al 65% prima di sfumare verso l'azzurro — un gradiente 2-stop semplice
 // darebbe già metà azzurro a metà altezza, più di quanto chiesto.

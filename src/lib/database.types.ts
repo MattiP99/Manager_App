@@ -134,6 +134,41 @@ export type Database = {
           },
         ]
       }
+      expense_categories: {
+        Row: {
+          created_at: string
+          household_id: string
+          id: string
+          label: string
+          slug: string
+          sort_order: number
+        }
+        Insert: {
+          created_at?: string
+          household_id: string
+          id?: string
+          label: string
+          slug?: string
+          sort_order?: number
+        }
+        Update: {
+          created_at?: string
+          household_id?: string
+          id?: string
+          label?: string
+          slug?: string
+          sort_order?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "expense_categories_household_id_fkey"
+            columns: ["household_id"]
+            isOneToOne: false
+            referencedRelation: "households"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       expenses: {
         Row: {
           amount: number
@@ -166,6 +201,13 @@ export type Database = {
           label?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "expenses_category_fkey"
+            columns: ["household_id", "category"]
+            isOneToOne: false
+            referencedRelation: "expense_categories"
+            referencedColumns: ["household_id", "slug"]
+          },
           {
             foreignKeyName: "expenses_household_id_fkey"
             columns: ["household_id"]
