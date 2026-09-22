@@ -33,6 +33,7 @@ export function PaymentMetricList({ metric, mode, anchorDate, onSelectClient }: 
     <ScrollView style={styles.scroll} contentContainerStyle={styles.container}>
       <Text style={styles.title}>{metricConfig.label}</Text>
       <Text style={styles.subtitle}>{periodLabel(mode, anchorDate)}</Text>
+      <Text style={styles.metricSubtitle}>{metricConfig.subtitle}</Text>
 
       {rows.length === 0 && <Text style={styles.empty}>Nessun cliente ancora.</Text>}
       {rows.map((row: ClientPaymentRow) => {
@@ -55,6 +56,7 @@ const styles = StyleSheet.create({
   padded: { padding: Spacing.md, ...Typography.body, color: Colors.ink },
   title: { ...Typography.title, color: Colors.ink },
   subtitle: { ...Typography.body, color: Colors.inkMuted },
+  metricSubtitle: { ...Typography.small, color: Colors.inkMuted },
   clientName: { ...Typography.bodyBold, color: Colors.ink },
   clientValue: { ...Typography.title, color: Colors.ink },
   due: { ...Typography.title, color: Colors.error },

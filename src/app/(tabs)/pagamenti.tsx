@@ -75,6 +75,7 @@ export default function PagamentiScreen() {
           <PressableCard key={metric.key} onPress={() => setOpenMetric(metric.key)}>
             <Text style={styles.summaryLabel}>{metric.label}</Text>
             <Text style={styles.summaryValue}>{metric.format(grandTotal[metric.key])}</Text>
+            <Text style={styles.summarySubtitle}>{metric.subtitle}</Text>
           </PressableCard>
         ))}
       </View>
@@ -163,6 +164,7 @@ const styles = StyleSheet.create({
   summaryGrid: { gap: Spacing.sm },
   summaryLabel: { ...Typography.caption, color: Colors.inkMuted },
   summaryValue: { ...Typography.title, color: Colors.ink },
+  summarySubtitle: { ...Typography.small, color: Colors.inkMuted },
   list: { flex: 1 },
   listContent: { gap: Spacing.sm, paddingTop: Spacing.xs },
   clientName: { ...Typography.bodyBold, color: Colors.ink },
