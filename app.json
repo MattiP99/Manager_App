@@ -8,6 +8,7 @@
     "scheme": "managerappproject",
     "userInterfaceStyle": "automatic",
     "android": {
+      "package": "com.mattippi.managerapp",
       "adaptiveIcon": {
         "backgroundColor": "#061D2B",
         "foregroundImage": "./assets/images/android-icon-foreground.png",
@@ -36,6 +37,13 @@
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": true
-    }
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "b27a291f-4508-4ad7-be04-bfc23119f3ca"
+      }
+    },
+    "owner": "mattippi"
   }
 }
