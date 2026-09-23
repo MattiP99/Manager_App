@@ -264,11 +264,48 @@ export type Database = {
         }
         Relationships: []
       }
+      note_section_recovery: {
+        Row: {
+          household_id: string
+          recovery_key_hex: string
+          section_id: string
+          updated_at: string
+        }
+        Insert: {
+          household_id: string
+          recovery_key_hex: string
+          section_id: string
+          updated_at?: string
+        }
+        Update: {
+          household_id?: string
+          recovery_key_hex?: string
+          section_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "note_section_recovery_household_id_fkey"
+            columns: ["household_id"]
+            isOneToOne: false
+            referencedRelation: "households"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "note_section_recovery_section_id_fkey"
+            columns: ["section_id"]
+            isOneToOne: true
+            referencedRelation: "note_sections"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       note_sections: {
         Row: {
           created_at: string
           encryption_canary: string | null
           encryption_salt: string | null
+          encryption_wrapped_key: string | null
           household_id: string
           id: string
           sort_order: number
@@ -279,6 +316,7 @@ export type Database = {
           created_at?: string
           encryption_canary?: string | null
           encryption_salt?: string | null
+          encryption_wrapped_key?: string | null
           household_id: string
           id?: string
           sort_order?: number
@@ -289,6 +327,7 @@ export type Database = {
           created_at?: string
           encryption_canary?: string | null
           encryption_salt?: string | null
+          encryption_wrapped_key?: string | null
           household_id?: string
           id?: string
           sort_order?: number

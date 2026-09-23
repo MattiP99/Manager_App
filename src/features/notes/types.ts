@@ -6,6 +6,7 @@ export interface NoteSection {
   type: NoteSectionType;
   sort_order: number;
   encryption_salt: string | null;
+  encryption_wrapped_key: string | null;
   encryption_canary: string | null;
 }
 

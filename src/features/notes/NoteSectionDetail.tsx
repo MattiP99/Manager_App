@@ -1,12 +1,16 @@
 import { useEffect, useState } from 'react';
 import { View, Text, TextInput, Pressable, StyleSheet, ScrollView, useWindowDimensions } from 'react-native';
-import { useNoteSections, useConfigurePasswordSection } from './useNoteSections';
+import { useNoteSections, useConfigurePasswordSection, useWriteRecoveryKey } from './useNoteSections';
 import { useNotesBySection } from './useNotes';
 import { setupPasswordSection, unlockPasswordSection, decryptText, loadVerifiedKey } from './crypto/aesNotes';
+import { bytesToHex } from '@noble/hashes/utils.js';
+import { ForgotPassphrase } from './ForgotPassphrase';
 import { storeKey } from './crypto/secureKeyStore';
 import { AddNoteForm } from './AddNoteForm';
 import { EditNoteForm } from './EditNoteForm';
 import { DetailModal } from '../../components/DetailModal';
+import { Button } from '../../components/Button';
+import { IconButton } from '../../components/IconButton';
 import { formatDayLabel } from '../calendar/calendarGrid';
 import { toLocalDateString } from '../../lib/dates';
 import { truncateWords } from '../../lib/text';
@@ -25,17 +29,22 @@ export function NoteSectionDetail({ sectionId, onClose }: NoteSectionDetailProps
   const section = sections?.find((s) => s.id === sectionId);
   const { data: notes } = useNotesBySection(sectionId);
   const configurePasswordSection = useConfigurePasswordSection();
+  const writeRecoveryKey = useWriteRecoveryKey();
   const { height } = useWindowDimensions();
 
   const [key, setKey] = useState<Uint8Array | null>(null);
   const [checkedStoredKey, setCheckedStoredKey] = useState(false);
   const [passphrase, setPassphrase] = useState('');
+  const [passphraseConfirm, setPassphraseConfirm] = useState('');
+  const [showPassphrase, setShowPassphrase] = useState(false);
+  const [showPassphraseConfirm, setShowPassphraseConfirm] = useState(false);
   const [unlockError, setUnlockError] = useState<string | null>(null);
   const [decryptedContent, setDecryptedContent] = useState<Record<string, string>>({});
   const [decryptErrorIds, setDecryptErrorIds] = useState<Set<string>>(new Set());
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [addingNote, setAddingNote] = useState(false);
   const [editingNoteId, setEditingNoteId] = useState<string | null>(null);
+  const [forgotPassphrase, setForgotPassphrase] = useState(false);
 
   const isPasswordSection = section?.type === 'password';
 
@@ -73,30 +82,51 @@ export function NoteSectionDetail({ sectionId, onClose }: NoteSectionDetailProps
   if (!sections) return <Text style={styles.padded}>Caricamento...</Text>;
   if (!section) return <Text style={styles.padded}>Sezione non trovata.</Text>;
 
+  const isSetupMode = !section.encryption_salt || !section.encryption_wrapped_key || !section.encryption_canary;
+
   const handleSubmitPassphrase = async () => {
     setUnlockError(null);
     if (!passphrase.trim()) return;
+    if (isSetupMode && passphrase !== passphraseConfirm) {
+      setUnlockError('Le due passphrase non coincidono.');
+      return;
+    }
     setIsSubmitting(true);
     try {
-      if (!section.encryption_salt || !section.encryption_canary) {
+      if (isSetupMode) {
         const setup = await setupPasswordSection(passphrase);
         await configurePasswordSection.mutateAsync({
           sectionId: section.id,
           saltHex: setup.saltHex,
+          wrappedKeyBase64: setup.wrappedKeyBase64,
           canaryBase64: setup.canaryBase64,
         });
-        await storeKey(setup.keyBytes);
-        setKey(setup.keyBytes);
+        // La sezione va usabile subito, non deve dipendere dal deposito di
+        // recupero: caching locale e sblocco PRIMA, deposito "best effort"
+        // (mai await-ato, un suo fallimento non deve mai bloccare l'uso).
+        await storeKey(setup.dekBytes);
+        setKey(setup.dekBytes);
+        writeRecoveryKey.mutate({ sectionId: section.id, recoveryKeyHex: bytesToHex(setup.dekBytes) });
         return;
       }
 
-      const unlockedKey = await unlockPasswordSection(passphrase, section.encryption_salt, section.encryption_canary);
+      if (!section.encryption_salt || !section.encryption_wrapped_key || !section.encryption_canary) return;
+      const unlockedKey = await unlockPasswordSection(
+        passphrase,
+        section.encryption_salt,
+        section.encryption_wrapped_key,
+        section.encryption_canary
+      );
       if (!unlockedKey) {
         setUnlockError('Passphrase errata.');
         return;
       }
       await storeKey(unlockedKey);
       setKey(unlockedKey);
+      // Auto-riparazione: se la riga di recupero mancasse (es. un fallimento
+      // parziale di un setup precedente), uno sblocco riuscito la ricrea da
+      // sola — ignorato in caso di errore, mai bloccante per lo sblocco.
+      writeRecoveryKey.mutate({ sectionId: section.id, recoveryKeyHex: bytesToHex(unlockedKey) });
     } catch (err) {
       setUnlockError(err instanceof Error ? err.message : 'Si è verificato un errore. Riprova.');
     } finally {
@@ -114,30 +144,74 @@ export function NoteSectionDetail({ sectionId, onClose }: NoteSectionDetailProps
       {locked && (
         <View style={styles.unlockBox}>
           <Text style={styles.unlockLabel}>
-            {section.encryption_salt
-              ? 'Inserisci la passphrase per sbloccare questa sezione'
-              : 'Imposta una passphrase per proteggere questa sezione (condivisa con tutta la famiglia — se si perde, le note non sono più recuperabili)'}
+            {isSetupMode
+              ? 'Imposta una passphrase per proteggere questa sezione (condivisa con tutta la famiglia — se si perde, le note non sono più recuperabili)'
+              : 'Inserisci la passphrase per sbloccare questa sezione'}
           </Text>
-          <TextInput
-            style={styles.input}
-            placeholder="Passphrase"
-            secureTextEntry
-            value={passphrase}
-            onChangeText={setPassphrase}
-            editable={!isSubmitting}
-          />
+          <View style={styles.passphraseGroup}>
+            <View style={styles.passphraseFieldWrapper}>
+              <TextInput
+                style={[styles.input, styles.inputWithIcon]}
+                placeholder="Passphrase"
+                secureTextEntry={!showPassphrase}
+                autoCapitalize="none"
+                autoCorrect={false}
+                value={passphrase}
+                onChangeText={setPassphrase}
+                onSubmitEditing={isSetupMode ? undefined : handleSubmitPassphrase}
+                editable={!isSubmitting}
+              />
+              <View style={styles.eyeOverlay}>
+                <IconButton
+                  name={showPassphrase ? 'eye-off' : 'eye'}
+                  onPress={() => setShowPassphrase((v) => !v)}
+                  size={18}
+                  color={Colors.accent}
+                  accessibilityLabel={showPassphrase ? 'Nascondi passphrase' : 'Mostra passphrase'}
+                />
+              </View>
+            </View>
+            {isSetupMode && (
+              <View style={styles.passphraseFieldWrapper}>
+                <TextInput
+                  style={[styles.input, styles.inputWithIcon]}
+                  placeholder="Conferma passphrase"
+                  secureTextEntry={!showPassphraseConfirm}
+                  autoCapitalize="none"
+                  autoCorrect={false}
+                  value={passphraseConfirm}
+                  onChangeText={setPassphraseConfirm}
+                  onSubmitEditing={handleSubmitPassphrase}
+                  editable={!isSubmitting}
+                />
+                <View style={styles.eyeOverlay}>
+                  <IconButton
+                    name={showPassphraseConfirm ? 'eye-off' : 'eye'}
+                    onPress={() => setShowPassphraseConfirm((v) => !v)}
+                    size={18}
+                    color={Colors.accent}
+                    accessibilityLabel={showPassphraseConfirm ? 'Nascondi conferma passphrase' : 'Mostra conferma passphrase'}
+                  />
+                </View>
+              </View>
+            )}
+          </View>
           {unlockError && <Text style={styles.error}>{unlockError}</Text>}
-          <Pressable style={styles.button} onPress={handleSubmitPassphrase} disabled={isSubmitting}>
-            <Text style={styles.buttonText}>
-              {isSubmitting ? 'Verifica in corso...' : section.encryption_salt ? 'Sblocca' : 'Imposta passphrase'}
-            </Text>
-          </Pressable>
+          <Button
+            label={isSetupMode ? 'Imposta passphrase' : 'Sblocca'}
+            onPress={handleSubmitPassphrase}
+            loading={isSubmitting}
+          />
+          {!isSetupMode && <ForgotPassphrase />}
         </View>
       )}
 
       {(!isPasswordSection || key) && (
         <>
-          <Pressable style={styles.addButton} onPress={() => setAddingNote(true)}>
+          <Pressable
+            style={({ pressed }) => [styles.addButton, { opacity: pressed ? 0.8 : 1 }]}
+            onPress={() => setAddingNote(true)}
+          >
             <Text style={styles.addButtonText}>+ Nota</Text>
           </Pressable>
 
@@ -194,9 +268,11 @@ const styles = StyleSheet.create({
     ...Typography.body,
     color: Colors.ink,
   },
+  passphraseGroup: { gap: Spacing.sm },
+  passphraseFieldWrapper: { position: 'relative', justifyContent: 'center' },
+  inputWithIcon: { paddingRight: 44 },
+  eyeOverlay: { position: 'absolute', right: Spacing.xs, top: 0, bottom: 0, justifyContent: 'center' },
   error: { ...Typography.body, color: Colors.error },
-  button: { backgroundColor: Colors.accent, borderRadius: Radii.sm, padding: Spacing.md, alignItems: 'center' },
-  buttonText: { ...Typography.bodyBold, color: Colors.ink },
   addButton: {
     backgroundColor: Colors.accent,
     borderRadius: Radii.sm,

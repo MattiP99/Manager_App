@@ -23,6 +23,13 @@ function AuthGate() {
   useEffect(() => {
     if (sessionLoading) return;
 
+    // Gestisce da sola la propria navigazione (verifica la sessione di
+    // recupero, mostra un errore se non valida, naviga a "/" solo dopo un
+    // reset riuscito) — esclusa da tutte le regole sotto, altrimenti
+    // "session && inAuthGroup" la rimbalzerebbe via non appena setSession
+    // stabilisce una sessione, prima ancora che l'utente veda lo schermo.
+    if (segments[0] === 'recupero-password') return;
+
     const inAuthGroup = segments[0] === 'login' || segments[0] === 'signup';
 
     if (!session && !inAuthGroup) {

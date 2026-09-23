@@ -1,0 +1,16 @@
+-- Bugfix reale, trovato riproducendo l'errore contro il vero database
+-- (2026-09-24): l'app scriveva la DEK di recupero con .upsert(), ma Postgres
+-- rifiuta un INSERT ... ON CONFLICT DO UPDATE se il ruolo che scrive non può
+-- vedere l'eventuale riga in conflitto sotto RLS — ed è ESATTAMENTE quello
+-- che la policy SELECT di note_section_recovery nega di proposito a una
+-- sessione normale (leggibile solo durante il recupero via email). Risultato
+-- pratico: ogni tentativo di scrivere la riga di recupero falliva con
+-- "42501 new row violates row-level security policy", anche al primo
+-- inserimento mai fatto sulla tabella.
+--
+-- Fix lato app (useNoteSections.ts): .insert() semplice invece di .upsert(),
+-- un eventuale 23505 (chiave duplicata) viene ignorato — la DEK non cambia
+-- mai dopo il primo setup, quindi non serve mai un vero aggiornamento.
+-- Questa migrazione rimuove di conseguenza la policy UPDATE, diventata morta
+-- e un permesso in più non necessario da mantenere.
+drop policy "household members update note_section_recovery" on note_section_recovery;
