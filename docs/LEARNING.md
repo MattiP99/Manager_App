@@ -1,8 +1,143 @@
 # Manager App — Note tecniche per colloqui
 
-> Documento di studio, non di codice. Raccoglie le scelte tecniche del progetto e il *perché*, organizzate per argomento, per poterle spiegare e giustificare a un reclutatore (posizioni backend/frontend/full stack). Aggiornato a ogni blocco completato — ultimo aggiornamento: sessione 2026-09-23 (lavoro diretto sulla sezione Password: occhio mostra/nascondi, conferma passphrase, e soprattutto recupero passphrase via email con key wrapping/envelope encryption, senza indebolire il modello zero-knowledge — vedi sezione "Note cifrate" e bug #24). 6/6 blocchi funzionali + Blocco A + Blocco B completi, Blocco C quasi completo — resta il README finale.
+> Documento di studio, non di codice. Raccoglie le scelte tecniche del progetto e il *perché*, organizzate per argomento, per poterle spiegare e giustificare a un reclutatore (posizioni backend/frontend/full stack). Aggiornato a ogni blocco completato — ultimo aggiornamento: 2026-09-24. Aggiunte le sezioni "Fondamentali delle tecnologie usate" (React, React Native, TypeScript, Expo, Supabase, TanStack Query, EAS Build, testing) e "Domande probabili al colloquio", da leggere per prime. 6/6 blocchi funzionali e Blocco A e B completi; Blocco C quasi completo (restano 4 form). README con screenshot e diagrammi architetturali pubblicato.
 
-Indice: [Architettura](#architettura-generale) · [Database e RLS](#database-e-sicurezza-a-livello-di-riga-rls) · [Ledger FIFO](#il-ledger-dei-pagamenti-pattern-fifo) · [Calendario visuale](#calendario-visuale-componente-parametrico) · [Calendario familiare e promemoria](#calendario-familiare-occorrenze-virtuali-e-promemoria-locali) · [Spese mensili](#spese-mensili-categorie-estendibili-e-aggregazione-lato-client) · [Note cifrate](#note-cifrate-aes-256-gcm-lato-client) · [Design system e layout responsivo](#design-system-e-layout-responsivo-blocco-a-del-redesign) · [Navigazione a modali](#navigazione-a-modali-un-componente-tre-varianti-blocco-c) · [Frontend](#frontend-e-mobile) · [Sicurezza](#sicurezza) · [Testing](#strategia-di-testing) · [Processo di sviluppo](#processo-di-sviluppo) · [Bug reali trovati](#bug-reali-trovati-durante-lo-sviluppo) · [Cosa manca](#cosa-manca--miglioramenti-che-dimostrerebbero-competenza-aggiuntiva-in-un-colloquio)
+Indice: [Fondamentali](#fondamentali-delle-tecnologie-usate-da-sapere-spiegare-a-voce) · [Domande probabili](#domande-probabili-al-colloquio-risposte-brevi-poi-approfondisci) · [Architettura](#architettura-generale) · [Database e RLS](#database-e-sicurezza-a-livello-di-riga-rls) · [Ledger FIFO](#il-ledger-dei-pagamenti-pattern-fifo) · [Calendario visuale](#calendario-visuale-componente-parametrico) · [Calendario familiare e promemoria](#calendario-familiare-occorrenze-virtuali-e-promemoria-locali) · [Spese mensili](#spese-mensili-categorie-estendibili-e-aggregazione-lato-client) · [Note cifrate](#note-cifrate-aes-256-gcm-lato-client) · [Design system e layout responsivo](#design-system-e-layout-responsivo-blocco-a-del-redesign) · [Navigazione a modali](#navigazione-a-modali-un-componente-tre-varianti-blocco-c) · [Frontend](#frontend-e-mobile) · [Sicurezza](#sicurezza) · [Testing](#strategia-di-testing) · [Processo di sviluppo](#processo-di-sviluppo) · [Bug reali trovati](#bug-reali-trovati-durante-lo-sviluppo) · [Cosa manca](#cosa-manca--miglioramenti-che-dimostrerebbero-competenza-aggiuntiva-in-un-colloquio)
+
+---
+
+## Fondamentali delle tecnologie usate (da sapere spiegare a voce)
+
+> Questa sezione è la base: *che cos'è* ogni tecnologia, *come funziona sotto*, e *dove la usa questo progetto*. Le sezioni successive spiegano le decisioni specifiche. A un colloquio conviene partire da qui e scendere nel dettaglio solo se chiedono.
+
+### React (le basi su cui sta React Native)
+
+- **Componenti come funzioni.** Un componente è una funzione che riceve delle `props` e restituisce una descrizione dell'interfaccia (JSX). Non si modifica mai l'interfaccia a mano: si cambia lo stato e React rifà il render. Versione usata qui: **React 19.2**.
+- **Hook** usati nel progetto:
+  - `useState`: stato locale, per esempio i campi dei form o quale modale è aperto.
+  - `useEffect`: effetti collaterali dopo il render, per esempio i redirect dell'`AuthGate` in `_layout.tsx` o l'avvio delle animazioni del pannello laterale.
+  - `useMemo`: calcoli costosi memorizzati, per esempio l'espansione delle occorrenze ricorrenti.
+  - `useContext`: `useFullWidthContent` in `AppShell.tsx`, per non passare una prop attraverso molti livelli.
+  - **Custom hook**, cioè i nostri `useClients`, `useExpenses` e simili: incapsulano la logica di dominio in una funzione riutilizzabile.
+- **Riconciliazione e `key`.** Quando una lista cambia, React confronta il vecchio albero con il nuovo e aggiorna solo ciò che è diverso. La `key` stabile (qui sempre l'`id` del database) dice a React quale elemento è quale.
+- **Regole degli hook:** si chiamano sempre allo stesso livello e nello stesso ordine, mai dentro `if` o cicli. React li identifica per posizione.
+- **Stato derivato contro effetto.** Il linter segnala `set-state-in-effect` nei form che "idratano" lo stato da un record caricato. Nei form trasformati in modali (`EditExpenseForm`, `EditNoteForm`) il problema sparisce per costruzione: lo stato si inizializza con `useState(valoreIniziale)`, e il componente viene rimontato a ogni apertura del modale.
+
+### React Native
+
+- **Cos'è.** Si scrivono componenti React, ma il risultato sono **viste native vere** (`View` diventa `android.view.View` su Android e `UIView` su iOS), non una WebView. La logica gira in JavaScript sul motore **Hermes**, ottimizzato per mobile e con bytecode precompilato.
+- **New Architecture**, attiva di default dalla 0.76; qui la versione è **0.86**:
+  - **JSI** (JavaScript Interface): JS e C++ si chiamano direttamente, senza il vecchio "bridge" asincrono che serializzava tutto in JSON.
+  - **Fabric**: il nuovo renderer.
+  - **TurboModules**: moduli nativi caricati quando servono. `expo-crypto`, `expo-secure-store` ed `expo-notifications` sono moduli nativi di questo tipo.
+- **Styling.** `StyleSheet.create` con un sottoinsieme di CSS e **Flexbox ovunque**, ma con default diversi dal web: `flexDirection: 'column'`, `flexShrink: 0`, e `flex: 1` che vale `flexGrow 1 / flexShrink 1 / flexBasis 0`. Il bug #16 (le zone mattina/pomeriggio sempre divise a metà) nasce esattamente da questa differenza.
+- **Componenti base usati:**
+  - `View`, `Text`, `TextInput`, `Pressable` (interazione con stato di pressione).
+  - `ScrollView`, che deve avere un'altezza vincolata per scorrere (bug #7).
+  - `FlatList`: lista virtualizzata che renderizza solo le righe visibili. Usata in Pagamenti, con l'header dentro `ListHeaderComponent` (bug #17).
+  - `Modal`, la base di `DetailModal`.
+- **Animazioni:** API `Animated` con `useNativeDriver: true`. L'animazione viene passata al thread nativo e non si blocca se JavaScript è occupato: è così che funziona il pannello laterale.
+- **Codice per piattaforma:** `Platform.OS` dice su quale piattaforma gira l'app, non quanto è largo lo schermo. Per le decisioni di layout serve `useWindowDimensions()` (bug #19).
+- **React Native Web:** traduce gli stessi componenti in DOM e CSS. È quello che fa girare l'app nel browser e anche gli screenshot del README, ottenuti con Edge headless su un account demo.
+
+### TypeScript
+
+- **Cos'è.** Un superset di JavaScript con tipi statici, verificati a compile time (`tsc --noEmit`) e cancellati a runtime. Qui gira in modalità **`strict`**: niente `any` implicito, controlli su `null`/`undefined`, e simili.
+- **Pattern usati davvero nel codice:**
+  - **Tipi generati dal database:** `createClient<Database>(...)` in `src/lib/supabase.ts`, con `Database` rigenerato da `supabase gen types` dopo ogni migrazione. Scrivere `.from('clients').select('name')` ha già il tipo giusto, e il nome di una colonna sbagliata è un errore di compilazione.
+  - **Generics con vincoli:** `filterByDateRange<T extends { date: string }>(items: T[])` e `splitByHalfDay<T extends { start_time: string | null }>`. La funzione è riusabile su giornate, eventi e spese, e restituisce lo stesso tipo che riceve.
+  - **Union letterali e `Record`:** `CalendarViewMode = 'day' | 'week' | 'month'` e `Record<FamilyCategory, string>` per i colori. Se si aggiunge una categoria, il compilatore obbliga ad assegnarle un colore.
+  - **Utility type:** `Exclude<FamilyCategory, 'altro'>`, poi semplificato in un alias (bug #21).
+  - **`as const`:** tuple immutabili con tipo letterale, come `GRADIENT_COLORS` o le tuple `[id, testo, errore] as const` nella decifratura.
+  - **Route tipizzate:** Expo Router genera `.expo/types/router.d.ts` (`typedRoutes: true`), quindi `router.push('/rotta-inesistente')` non compila.
+- **Limite onesto da citare:** i tipi valgono solo a compile time. `useLocalSearchParams<{id: string}>()` è una promessa, non un controllo: a runtime il valore può essere `string[]` o `undefined`. Per questo i parametri di rotta vengono validati a mano.
+
+### Expo (SDK 57)
+
+- **Cos'è.** Un framework e una piattaforma sopra React Native: CLI, bundler (Metro), una libreria di moduli nativi già pronti (`expo-*`), il router, e i servizi cloud per build e aggiornamenti (EAS).
+- **Expo Router:**
+  - **Routing file-based**: ogni file in `src/app/` è una schermata, `[id].tsx` è una rotta dinamica e `(tabs)/` è un gruppo che non compare nell'URL. La stessa rotta vale su web (URL vero) e su mobile (deep link `managerappproject://...`, usato dal link di recupero passphrase).
+  - Qui il layout radice usa `<Slot/>` al posto di uno `Stack`. Conseguenza: lo stato locale si perde cambiando tab (limite documentato).
+- **Continuous Native Generation (CNG):** le cartelle `android/` e `ios/` non sono nel repository. Vengono generate da `app.json` più i **config plugin** (`npx expo prebuild`, fatto in automatico da EAS). La configurazione nativa (package Android, icone, splash, schema URL) è dichiarativa e versionata in un solo file.
+- **Expo Go, development build e build standalone:**
+  - **Expo Go** è un'app generica con un insieme fisso di moduli nativi.
+  - Una **development build** (profilo `development`, con `expo-dev-client`) è la tua app con i tuoi moduli nativi, che carica il JavaScript da Metro sul PC per iterare senza ricompilare.
+  - Una **build standalone** (`preview`/`production`) contiene già il bundle JS: è l'APK da installare.
+- **Variabili d'ambiente:** solo quelle con prefisso `EXPO_PUBLIC_` finiscono nel bundle, e vengono **incollate testualmente al momento della build**, non lette a runtime. Per questo contengono solo valori pubblici (URL e anon key di Supabase), e su EAS vanno impostate per ogni ambiente.
+- **Rendering web statico** (`"web": {"output": "static"}`): le pagine vengono pre-renderizzate lato server, dove `window` e `localStorage` non esistono. Da qui l'adapter di storage differenziato in `supabase.ts` (vedi "Frontend e mobile").
+- **Moduli Expo usati:**
+  - `expo-crypto`: AES-GCM nativo e numeri casuali.
+  - `expo-secure-store`: Keychain su iOS, Keystore su Android.
+  - `expo-notifications`: promemoria locali.
+  - `expo-linear-gradient`: sfondo.
+  - `expo-font` + `@expo-google-fonts/inter`, `expo-splash-screen`, `expo-linking`: deep link.
+- **Regola del progetto:** si legge sempre la documentazione della versione esatta dell'SDK (`docs.expo.dev/versions/v57.0.0/`). La spec aveva dato per scontato che `expo-crypto` avesse PBKDF2, e non ce l'ha.
+
+### Supabase
+
+- **Cos'è.** Un "backend as a service" open source costruito attorno a **un Postgres vero**. I pezzi usati qui:
+  - **Postgres**: tabelle, vincoli, view, funzioni PL/pgSQL, RLS.
+  - **PostgREST**: genera automaticamente una API REST dallo schema. `supabase.from('clients').select()` diventa una richiesta HTTP che PostgREST traduce in SQL.
+  - **Auth (GoTrue)**: registrazione, login, email di conferma e di recupero; emette un **JWT** firmato.
+  - **supabase-js**: il client che mette insieme tutto.
+- **Come si collega la sicurezza:**
+  - Il client manda sempre il JWT dell'utente. Postgres lo legge: `auth.uid()` restituisce l'id dell'utente, `auth.jwt()` l'intero token.
+  - Le **policy RLS** usano questi valori per decidere riga per riga cosa è visibile o scrivibile.
+  - La **anon key** è pubblica per design: identifica il progetto, non dà permessi.
+  - La **service_role key** bypassa RLS. Qui è usata solo in test e script locali, mai nell'app.
+- **Da dire bene a voce:** RLS con `using` filtra le righe lette (e quelle toccabili da UPDATE e DELETE), mentre `with check` valida le righe scritte. Un UPDATE bloccato da RLS **non dà errore**, modifica zero righe.
+- **Funzioni `SECURITY DEFINER`** (`create_household`, `join_household`, `is_household_member`): girano con i privilegi del proprietario. Servono per operazioni atomiche e per evitare la ricorsione nelle policy. Vanno sempre con `set search_path`.
+- **Migrazioni:** file SQL numerati in `supabase/migrations/` (15 finora), applicati con `supabase db push`. I tipi TypeScript si rigenerano dopo ogni migrazione.
+- **Esempio avanzato già nel progetto:** una policy che legge il claim `amr` del JWT per distinguere una sessione nata dal link di recupero email (`otp`) da un login con password. Vedi "Note cifrate".
+- **Limiti incontrati davvero:**
+  - Il servizio email incluso consente **2 email all'ora** per l'intero progetto. Una registrazione reale (la madre dell'utente) è stata rifiutata con `email rate limit exceeded`.
+  - La soluzione vera è un SMTP proprio (es. Resend), oppure disattivare la conferma email alla registrazione.
+  - È un buon esempio di "funziona in sviluppo, si rompe con utenti veri".
+
+### TanStack Query (stato del server)
+
+- **Stato del server e stato del client:** i dati che vivono nel database non sono "stato dell'app", sono una **cache** di qualcosa che sta altrove. TanStack Query gestisce questa cache: `queryKey` (es. `['clients', householdId]`) identifica i dati, `enabled: !!householdId` aspetta che il nucleo familiare sia noto.
+- **Mutation e invalidazione:** dopo un insert, `queryClient.invalidateQueries({ queryKey: ['clients'] })` fa ricaricare le liste interessate. Non si aggiorna nulla a mano.
+- **Stati:** `isLoading`, `isError`, `data`, gestiti in modo dichiarativo. Un errore reale del progetto: `isLoading` è `false` su una query disabilitata, e questo causava un redirect sbagliato (blocco Fondamenta).
+
+### EAS Build (build native nel cloud)
+
+- **Cos'è.** Il servizio di Expo che compila l'app nativa (APK/AAB Android, IPA iOS) su macchine nel cloud. Niente Android Studio o Xcode in locale.
+- **`eas.json`** definisce i profili:
+  - `development`: dev client, APK interno.
+  - `preview`: APK standalone, da dare in mano a qualcuno.
+  - `production`: numero di versione incrementato in automatico.
+- **Firma:** EAS genera e custodisce il keystore Android; non viene mai salvato nel repository.
+- **Lezione pratica:** le variabili d'ambiente EAS sono separate per ambiente e non si ereditano. La prima build `preview` avrebbe prodotto un'app che si chiudeva all'avvio se non si fossero impostate prima le variabili Supabase su quell'ambiente.
+- Per iOS servono un account Apple Developer a pagamento e un `bundleIdentifier`: non è ancora stato fatto.
+
+### Testing
+
+- **Jest** con preset `jest-expo/node`, cioè senza renderer: veloce, ma i componenti `.tsx` non si possono testare. Da qui la regola "la logica sta in file `.ts` puri".
+- **142 test unitari** e **29 test RLS** contro un database reale, senza mock.
+- Vedi "Strategia di testing" e "Cosa manca" per la piramide dei test e cosa si aggiungerebbe (component test, Maestro/Playwright).
+
+---
+
+## Domande probabili al colloquio (risposte brevi, poi approfondisci)
+
+1. **"Perché React Native e non Flutter o nativo?"** Un solo linguaggio (TypeScript) e un solo codice per web, Android e iOS. L'ecosistema React è già noto e l'interfaccia resta nativa, non una WebView. Il costo: alcune differenze di comportamento tra piattaforme (Flexbox, `Alert` che su web non fa nulla: bug reale su "Elimina cliente").
+2. **"Come proteggi i dati tra famiglie diverse?"** Con RLS in Postgres, non con filtri nell'app. Ogni tabella ha `household_id`, e una funzione `SECURITY DEFINER` verifica l'appartenenza. I test di integrazione provano l'accesso incrociato con utenti reali.
+3. **"Come calcoli il saldo dei pagamenti?"** Con una view SQL e una window function: somma cumulativa del dovuto per cliente, confrontata con il pagato. È FIFO e non ha stato da tenere sincronizzato.
+4. **"Come gestisci lo stato?"** TanStack Query per i dati del server, `useState` per quello dell'interfaccia. Niente Redux, perché quasi tutto lo stato viene dal server.
+5. **"Raccontami un bug difficile."** Le candidate migliori:
+   - **Bug #9:** chiave di cifratura non verificata, rischio di perdere dati per sempre.
+   - **Bug #24:** `upsert` rifiutato da RLS perché `ON CONFLICT` deve poter vedere la riga.
+   - **Bug #1:** ricorsione infinita in una policy.
+   - Racconta sempre in 4 passi: sintomo, come l'hai riprodotto, causa radice, fix e lezione.
+6. **"Come funziona la cifratura?"** Ci sono tre pezzi:
+   - PBKDF2 (210k iterazioni) deriva una chiave dalla passphrase.
+   - Quella chiave avvolge una DEK casuale (envelope encryption).
+   - AES-256-GCM con la DEK cifra le note.
+
+   Il server vede solo testo cifrato. Il recupero via email funziona grazie a una policy RLS sul claim `amr` del JWT. Spiega anche il modello di minaccia: da cosa protegge e da cosa no.
+7. **"Cosa miglioreresti?"** Nell'ordine: gestione offline ed errori di rete (è l'impatto più diretto sull'utente reale), CI, test dei componenti, osservabilità con Sentry. Tutto dettagliato in "Cosa manca".
+8. **"Come hai usato l'AI?"** Spec e piano scritti prima del codice, revisione indipendente per ogni task più una revisione finale sull'intero diff, e ogni "test passati" riverificato in prima persona. Il valore sta nel processo di verifica, non nel "l'ha scritto l'AI". Vedi "Processo di sviluppo".
 
 ---
 
@@ -108,6 +243,8 @@ Ordinando le giornate per data e sommando in modo cumulativo, e confrontando con
 ## Spese mensili: categorie estendibili e aggregazione lato client
 
 **Il problema di design:** la spec fissava 4 categorie di spesa (Supermercato, Frutta e verdura, Extra, Francesca), ma l'utente ha chiesto esplicitamente di poter aggiungere una quinta categoria in futuro senza dover riscrivere la schermata. Il rischio concreto era il pattern già visto in altri blocchi: 4 blocchi UI scritti a mano, uno per categoria, che poi vanno tenuti sincronizzati manualmente a ogni modifica.
+
+> **Aggiornamento (Blocco C, migrazione 0013):** questa sezione descrive la prima versione. Oggi le categorie non sono più un array fisso con un vincolo `CHECK`: sono righe della tabella `expense_categories`, personalizzabili da ogni famiglia e protette da una foreign key composita (vedi bug #23). Il principio "una sola fonte di verità su cui la UI itera" è rimasto, si è solo spostato dal codice al database.
 
 **Soluzione — un solo array di configurazione, la UI itera su di esso:** `EXPENSE_CATEGORIES` (`{value, label}[]`) è l'unica fonte di verità sia per il vincolo `CHECK` a livello di database sia per la schermata, che genera le 4 card con un `.map()` invece di 4 blocchi JSX copiati. Aggiungere una categoria futura significa: una migrazione che estende il `CHECK` su `category` + una riga in questo array — non toccare `spese.tsx` in più punti. Stesso principio già usato per `FAMILY_CATEGORIES` nel blocco precedente, applicato qui fin dall'inizio invece che scoperto durante una revisione.
 
@@ -227,7 +364,7 @@ Ottimo materiale per la domanda da colloquio "raccontami di un bug che hai trova
 
 1. **Ricorsione infinita in una policy RLS** (dettagli sopra) — trovata dai test di integrazione contro il database reale, non da lettura del codice. Risolta con una funzione `SECURITY DEFINER`.
 2. **Regressione di persistenza sessione su mobile** — un tentativo di fix per un problema di rendering web ha silenziosamente rotto il login persistente su Android/iOS. Trovata leggendo il diff riga per riga invece di fidarsi del report "fatto" dell'implementazione.
-3. **Bug di fine mese nel calcolo delle date** — `date.setMonth(date.getMonth() - 1)` in JavaScript non gestisce correttamente i giorni che non esistono nel mese precedente (es. 31 marzo meno un mese non dà 28 febbraio, ma "rotola" in avanti dentro marzo) — perdeva silenziosamente fino a 3 giorni dai totali del filtro "mese" in determinate date. Risolto trattando "mese" come finestra scorrevole di 30 giorni invece che mese di calendario.
+3. **Bug di fine mese nel calcolo delle date** — `date.setMonth(date.getMonth() - 1)` in JavaScript non gestisce correttamente i giorni che non esistono nel mese precedente (es. 31 marzo meno un mese non dà 28 febbraio, ma "rotola" in avanti dentro marzo) — perdeva silenziosamente fino a 3 giorni dai totali del filtro "mese" in determinate date. Risolto trattando "mese" come finestra scorrevole di 30 giorni invece che mese di calendario. *(Più avanti, su richiesta dell'utente, la finestra scorrevole è stata sostituita da una vera navigazione per settimana e mese di calendario, costruita su funzioni pure testate: `startOfWeek`, `shiftWeek`, `dateRangeForAnchor`. Vedi bug #20.)*
 4. **Bug UTC vs ora locale** — `new Date().toISOString().slice(0, 10)` restituisce la data in UTC, non quella locale: un'operazione registrata subito dopo mezzanotte in Italia risultava datata al giorno precedente. Risolto con una funzione dedicata che legge anno/mese/giorno locali (`getFullYear()`/`getMonth()`/`getDate()`) invece di passare per la stringa ISO.
 5. **Test che darebbero falsa sicurezza** — un test di "negazione scrittura" usava un `client_id` inventato per provocare il rifiuto dell'INSERT: l'inserimento falliva sì, ma per un vincolo di chiave esterna (il cliente non esiste), non perché RLS lo stesse bloccando — quindi il test sarebbe passato anche con una policy di sicurezza completamente rotta. Corretto usando un cliente realmente esistente in un altro household, isolando il segnale RLS dal rumore del vincolo FK.
 6. **Bug di fine-anno nell'etichetta della vista settimana** (blocco Calendario Lavoro) — una settimana a cavallo tra dicembre e gennaio veniva etichettata con un solo anno (quello sbagliato per i giorni di dicembre), perché il confronto controllava solo il mese, mai l'anno. Trovato dalla revisione finale sull'intero branch, non dalle revisioni per singolo task — perché il codice colpevole viveva in un file `.tsx` non testabile con il preset Jest del progetto, e nessuna revisione di task aveva verificato che il codice del piano stesso rispettasse il vincolo "tutta la logica di data deve essere in funzioni pure testabili". Lezione di processo: un piano che scrive codice verbatim può violare i propri stessi vincoli, e le revisioni per-task controllano l'aderenza al piano, non l'aderenza del piano a se stesso — serve un controllo esplicito in più a fine blocco.
