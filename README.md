@@ -1,103 +1,109 @@
 # Manager App
 
-App di gestione familiare in uso reale ogni giorno. Tiene insieme **calendario**, **clienti e pagamenti** di una piccola attività di pulizie, **spese mensili** e **note** (con una sezione password cifrata end-to-end). Il codice è uno solo, in TypeScript, e gira come **web app, Android e iOS**.
+A family-management app used every day by a real family. It combines a **calendar**, **client and payment tracking** for a small cleaning business, **monthly expenses**, and **notes**, including a password section with end-to-end encryption. It is a single TypeScript codebase that runs as a **web app and on Android and iOS**.
 
-**Stack:** React Native 0.86 · Expo SDK 57 (Expo Router) · TypeScript strict · Supabase (Postgres + Auth + Row Level Security) · TanStack Query · Jest · EAS Build
+**Stack:** React Native 0.86 · Expo SDK 57 (Expo Router) · TypeScript (strict) · Supabase (Postgres + Auth + Row Level Security) · TanStack Query · Jest · EAS Build
 
 <p align="center">
-  <img src="docs/screenshots/desktop-calendario.png" width="68%" alt="Calendario lavoro, vista settimana (desktop)">
-  <img src="docs/screenshots/mobile-calendario.png" width="23%" alt="Calendario lavoro, vista settimana (mobile)">
+  <img src="docs/screenshots/desktop-calendario.png" width="68%" alt="Work calendar, week view (desktop)">
+  <img src="docs/screenshots/mobile-calendario.png" width="23%" alt="Work calendar, week view (mobile)">
 </p>
 
 ---
 
-## Screenshot
+## Screenshots
 
-Le schermate usano un account demo con dati inventati.
+The app's interface is in Italian. The screenshots below were taken with a demo account filled with made-up data.
 
-| Pagamenti: 4 metriche + saldo per cliente | Dettaglio cliente (modale a foglio) |
+| Payments: 4 metrics and a balance per client | Client detail (bottom-sheet modal) |
 |---|---|
-| ![Pagamenti](docs/screenshots/desktop-pagamenti.png) | ![Dettaglio cliente](docs/screenshots/desktop-dettaglio-cliente.png) |
-| **Calendario familiare: impegni ricorrenti, vista mese** | **Note: sezioni, la sezione Password è cifrata** |
-| ![Calendario Francesca](docs/screenshots/desktop-francesca-mese.png) | ![Note](docs/screenshots/desktop-note.png) |
+| ![Payments](docs/screenshots/desktop-pagamenti.png) | ![Client detail](docs/screenshots/desktop-dettaglio-cliente.png) |
+| **Family calendar: recurring commitments, month view** | **Notes: sections, including the encrypted Password section** |
+| ![Family calendar](docs/screenshots/desktop-francesca-mese.png) | ![Notes](docs/screenshots/desktop-note.png) |
 
-Su mobile la sidebar diventa una tab bar in basso e i dettagli si aprono come fogli che salgono dal basso:
+On mobile, the sidebar becomes a bottom tab bar and detail views open as sheets that slide up from the bottom:
 
 <p align="center">
-  <img src="docs/screenshots/mobile-francesca-settimana.png" width="24%" alt="Calendario familiare mobile">
-  <img src="docs/screenshots/mobile-spese.png" width="24%" alt="Spese mobile">
-  <img src="docs/screenshots/mobile-dettaglio-cliente.png" width="24%" alt="Dettaglio cliente mobile">
+  <img src="docs/screenshots/mobile-francesca-settimana.png" width="24%" alt="Family calendar on mobile">
+  <img src="docs/screenshots/mobile-spese.png" width="24%" alt="Expenses on mobile">
+  <img src="docs/screenshots/mobile-dettaglio-cliente.png" width="24%" alt="Client detail on mobile">
   <img src="docs/screenshots/desktop-login.png" width="24%" alt="Login">
 </p>
 
 ---
 
-## Funzionalità
+## Features
 
-- **Calendario Lavoro / Francesca.** Viste giorno, settimana e mese su un unico componente parametrico. Gli impegni ricorrenti (per esempio "piscina ogni martedì") sono **occorrenze virtuali**: non vengono salvate riga per riga, si calcolano al volo e si possono modificare o saltare per un singolo giorno. C'è un promemoria locale la sera prima.
-- **Clienti e pagamenti.** Ogni giornata lavorata registra la tariffa in vigore in quel momento. Il saldo usa un **ledger FIFO calcolato in SQL**: i pagamenti coprono prima le giornate più vecchie, senza mai associarli a mano.
-- **Spese mensili.** Navigazione per settimana o per mese e categorie personalizzabili da ogni famiglia.
-- **Note** con una sezione **Password cifrata end-to-end** (AES-256-GCM). La passphrase è condivisa in famiglia e si recupera via email senza che il server veda mai le note in chiaro in una sessione normale.
-- **Multi-famiglia fin dal primo giorno.** Chi si registra crea un nucleo familiare o entra in uno esistente con un codice invito, e ogni dato è isolato a livello di database.
-- **Layout responsivo:** sidebar su schermi larghi (≥ 820px), tab bar su mobile. La navigazione a modali ha tre varianti: centrata, foglio dal basso, pannello laterale.
+- **Work and family calendars.** Day, week, and month views are all built on one parameterized component.
+  - Recurring commitments (for example "swimming every Tuesday") are **virtual occurrences**: the app computes them on the fly instead of storing one row per date.
+  - A single occurrence can be edited or skipped for that day only.
+  - A local reminder fires the evening before.
+- **Clients and payments.** Each logged workday records the hourly rate in effect that day. Balances come from a **FIFO ledger computed in SQL**: payments cover the oldest workdays first, so they never have to be matched to specific days by hand.
+- **Monthly expenses.** You can browse by week or by month, and each family can define its own categories.
+- **Notes**, including a **Password section with end-to-end encryption** (AES-256-GCM).
+  - The family shares one passphrase.
+  - A forgotten passphrase can be recovered by email.
+  - During a normal session, the server never sees the notes in plaintext.
+- **Multi-family from day one.** A new user either creates a household or joins an existing one with an invite code. The database keeps each household's data isolated from every other household.
+- **Responsive layout.** Wide screens (≥ 820px) get a sidebar and phones get a tab bar. Modals come in three variants: a centered card, a bottom sheet, and a side panel.
 
 ---
 
-## Architettura
+## Architecture
 
-### Visione d'insieme
+### Overview
 
 ```mermaid
 flowchart LR
-    subgraph Client["Un'unica codebase TypeScript"]
+    subgraph Client["One TypeScript codebase"]
         direction TB
         W["Web<br/>(React Native Web)"]
         A["Android<br/>(APK via EAS Build)"]
         I["iOS"]
     end
 
-    subgraph App["App Expo"]
+    subgraph App["Expo app"]
         direction TB
-        R["Expo Router<br/>route file-based in src/app"]
+        R["Expo Router<br/>file-based routes in src/app"]
         F["Feature hooks<br/>TanStack Query"]
-        L["src/lib<br/>client Supabase tipizzato"]
-        C["Crypto on-device<br/>PBKDF2 + AES-256-GCM"]
+        L["src/lib<br/>typed Supabase client"]
+        C["On-device crypto<br/>PBKDF2 + AES-256-GCM"]
         R --> F --> L
         F --> C
     end
 
     subgraph Supabase["Supabase Cloud"]
         direction TB
-        AU["Auth<br/>JWT, email di recupero"]
+        AU["Auth<br/>JWT, recovery emails"]
         PG["PostgREST API"]
-        DB[("Postgres<br/>Row Level Security<br/>view + funzioni SQL")]
+        DB[("Postgres<br/>Row Level Security<br/>views + SQL functions")]
         AU --> DB
         PG --> DB
     end
 
     Client --> App
-    L -- "HTTPS + JWT utente<br/>(anon key pubblica)" --> PG
+    L -- "HTTPS + user JWT<br/>(public anon key)" --> PG
     L --> AU
 ```
 
-Il client non ha alcun privilegio speciale. Parla con Supabase usando la chiave pubblica (`anon`) e il JWT dell'utente, e ogni richiesta viene filtrata da **Row Level Security** direttamente in Postgres. Un bug nell'app non può quindi mostrare i dati di un'altra famiglia.
+The client has no special privileges. It calls Supabase with the public `anon` key and the user's JWT, and **Row Level Security** in Postgres filters every request. A bug in the app therefore cannot expose another family's data.
 
-### Livelli del codice
+### Code layers
 
 ```mermaid
 flowchart TB
-    subgraph routes["src/app: schermate (Expo Router)"]
+    subgraph routes["src/app: screens (Expo Router)"]
         T["(tabs)/ index · pagamenti · spese · note · impostazioni"]
         AUTH["login · signup · join-household · recupero-password"]
     end
-    subgraph features["src/features/dominio: logica per dominio"]
-        H["useClients · useWorkSessions · usePayments<br/>useExpenses · useNotes · useCalendarEvents …<br/>(query + mutation TanStack Query)"]
-        P["Funzioni pure testate<br/>computeClientSummary · recurringOccurrences<br/>expenseSummary · calendarGrid · crypto"]
-        UI["Componenti di dominio<br/>ClientDetailPanel · DayDetailPanel · AddExpenseForm …"]
+    subgraph features["src/features/domain: per-domain logic"]
+        H["useClients · useWorkSessions · usePayments<br/>useExpenses · useNotes · useCalendarEvents …<br/>(TanStack Query queries + mutations)"]
+        P["Tested pure functions<br/>computeClientSummary · recurringOccurrences<br/>expenseSummary · calendarGrid · crypto"]
+        UI["Domain components<br/>ClientDetailPanel · DayDetailPanel · AddExpenseForm …"]
     end
-    subgraph shared["Condivisi"]
+    subgraph shared["Shared"]
         CMP["src/components<br/>AppShell · DetailModal · CalendarView · Button · Card"]
-        LIB["src/lib<br/>supabase.ts · database.types.ts (generato)<br/>theme.ts (design token) · dates.ts"]
+        LIB["src/lib<br/>supabase.ts · database.types.ts (generated)<br/>theme.ts (design tokens) · dates.ts"]
     end
     routes --> features
     routes --> CMP
@@ -105,108 +111,108 @@ flowchart TB
     features --> LIB
 ```
 
-Regola del progetto: **i componenti non chiamano mai Supabase direttamente**, passano sempre da un hook del proprio dominio. La logica di calcolo (soldi, date, occorrenze ricorrenti) vive in file `.ts` puri, separati dai componenti, e ha test unitari.
+Project rule: **components never call Supabase directly**. They always go through a hook for their domain. Calculation logic (money, dates, recurring occurrences) lives in plain `.ts` files kept separate from components, and is unit-tested.
 
-### Modello dati
+### Data model
 
 ```mermaid
 erDiagram
-    households ||--o{ household_members : "ha"
+    households ||--o{ household_members : "has"
     households ||--o{ clients : ""
-    clients ||--o{ work_sessions : "giornate lavorate"
-    clients ||--o{ payments : "pagamenti"
-    households ||--o{ recurring_templates : "impegni ricorrenti"
-    recurring_templates ||--o{ calendar_events : "eccezioni puntuali"
-    households ||--o{ calendar_events : "eventi singoli"
+    clients ||--o{ work_sessions : "workdays"
+    clients ||--o{ payments : "payments"
+    households ||--o{ recurring_templates : "recurring commitments"
+    recurring_templates ||--o{ calendar_events : "one-off exceptions"
+    households ||--o{ calendar_events : "one-off events"
     households ||--o{ expense_categories : ""
-    expense_categories ||--o{ expenses : "FK composita (household_id, slug)"
+    expense_categories ||--o{ expenses : "composite FK (household_id, slug)"
     households ||--o{ note_sections : ""
     note_sections ||--o{ notes : ""
-    note_sections ||--o| note_section_recovery : "DEK di recupero"
+    note_sections ||--o| note_section_recovery : "recovery DEK"
 
     work_sessions {
         numeric hours
-        numeric rate_snapshot "tariffa congelata"
-        numeric amount_due "colonna generata: hours x rate"
+        numeric rate_snapshot "rate frozen at entry time"
+        numeric amount_due "generated column: hours x rate"
     }
     note_sections {
         text encryption_salt
         text encryption_canary
-        text encryption_wrapped_key "DEK avvolta dalla passphrase"
+        text encryption_wrapped_key "DEK wrapped by the passphrase"
     }
 ```
 
-Ogni tabella ha `household_id` e la stessa policy `is_household_member(household_id)` per lettura e scrittura. Il saldo di ogni giornata ("pagata" o "da pagare") non è salvato in una colonna. Lo calcola la view `work_session_status` (`security_invoker = true`) con una window function: somma cumulativa del dovuto confrontata con il totale pagato.
+Every table has a `household_id` column and uses the same `is_household_member(household_id)` policy for reads and writes. Whether a workday is paid is not stored in a column. The `work_session_status` view (`security_invoker = true`) computes it with a window function: it compares the running total owed against the total paid.
 
-### Cifratura della sezione Password
+### Password section encryption
 
 ```mermaid
 flowchart LR
-    PP["Passphrase di famiglia"] -- "PBKDF2-SHA256<br/>210.000 iterazioni + salt" --> KEK["Chiave derivata (KEK)"]
-    KEK -- "avvolge (AES-GCM)" --> WK["encryption_wrapped_key<br/>(sul server)"]
-    DEK["DEK casuale<br/>(chiave vera delle note)"] -- "AES-256-GCM" --> CT["Note cifrate<br/>(sul server: solo ciphertext)"]
-    WK -. "sblocco con passphrase" .-> DEK
-    REC["note_section_recovery<br/>leggibile via RLS solo se JWT amr = otp<br/>(sessione aperta dal link email)"] -. "recupero via email" .-> DEK
+    PP["Family passphrase"] -- "PBKDF2-SHA256<br/>210,000 iterations + salt" --> KEK["Derived key (KEK)"]
+    KEK -- "wraps (AES-GCM)" --> WK["encryption_wrapped_key<br/>(stored on server)"]
+    DEK["Random DEK<br/>(the actual notes key)"] -- "AES-256-GCM" --> CT["Encrypted notes<br/>(server stores ciphertext only)"]
+    WK -. "unlock with passphrase" .-> DEK
+    REC["note_section_recovery<br/>readable via RLS only when JWT amr = otp<br/>(session opened from the email link)"] -. "email recovery" .-> DEK
 ```
 
-Le note sono cifrate con una chiave casuale (DEK). La passphrase non cifra le note, cifra solo quella chiave: è lo schema *envelope encryption*. Così la passphrase si può reimpostare dal link di recupero via email senza ricifrare nulla. Durante un login normale nessuno, nemmeno un altro membro della famiglia, può leggere la copia di recupero.
+The notes are encrypted with a random key (the DEK). The passphrase does not encrypt the notes; it only encrypts that key. This is *envelope encryption*. As a result, the passphrase can be reset from the email recovery link without re-encrypting anything. During a normal login, nobody can read the recovery copy of the key, not even another family member.
 
 ---
 
-## Scelte tecniche principali
+## Key technical decisions
 
-| Scelta | Perché |
+| Decision | Why |
 |---|---|
-| **Expo Router** invece di React Navigation manuale | Un solo albero di route (file-based, come Next.js) per web, Android e iOS. |
-| **Supabase** invece di un backend custom | Postgres reale con RLS, Auth già pronta e tipi TypeScript generati dallo schema. La logica "server" che serve (funzioni atomiche, policy) è scritta in SQL. |
-| **RLS** invece di filtri `WHERE` nell'app | La sicurezza vale anche se il codice client dimentica un filtro. |
-| **TanStack Query** invece di Redux | Quasi tutto lo stato viene dal server: cache, invalidazione e loading/error senza `useEffect` scritti a mano. |
-| **Saldo FIFO calcolato** invece di un flag "pagato" | Non esiste uno stato incoerente da correggere: il saldo è sempre una funzione dei dati grezzi. |
-| **Occorrenze ricorrenti virtuali** | Nessun job che genera righe future: cambiare un impegno ricorrente vale subito per tutte le date. |
-| **Nessuna UI library** | `StyleSheet` più un piccolo design system interno (`theme.ts`, 6 componenti condivisi): meno vincoli di compatibilità cross-platform. |
+| **Expo Router** instead of hand-wired React Navigation | One file-based route tree (like Next.js) serves web, Android, and iOS. |
+| **Supabase** instead of a custom backend | A real Postgres database with RLS, built-in Auth, and TypeScript types generated from the schema. The server-side logic the app needs (atomic functions, access policies) is written in SQL. |
+| **RLS** instead of `WHERE` filters in app code | Data stays secure even if client code forgets a filter. |
+| **TanStack Query** instead of Redux | Almost all state comes from the server. TanStack Query handles caching, invalidation, and loading/error states, with no hand-written `useEffect` fetching. |
+| **Computed FIFO balance** instead of a stored "paid" flag | There is no stale state to repair: the balance is always derived from the raw data. |
+| **Virtual recurring occurrences** | No job has to generate future rows. Changing a recurring commitment applies to every date immediately. |
+| **No UI library** | Plain `StyleSheet` plus a small in-house design system (`theme.ts` and 6 shared components). This means fewer cross-platform compatibility constraints. |
 
 ---
 
-## Qualità e test
+## Quality and tests
 
-- **142 test unitari** (Jest, `jest-expo/node`) sulle funzioni pure: calcoli monetari, date, griglia calendario, occorrenze ricorrenti, codifica testo per la cifratura.
-- **29 test di integrazione RLS** contro un database Supabase reale, senza mock. Creano utenti veri e verificano che un utente non possa leggere né modificare i dati di un altro nucleo familiare. Coprono anche la scrittura, perché in Postgres un `UPDATE` bloccato da RLS non dà errore, modifica zero righe.
-- **15 migrazioni SQL** versionate in `supabase/migrations/`.
-- TypeScript `strict`, con i tipi del database generati automaticamente (`src/lib/database.types.ts`).
+- **142 unit tests** (Jest, `jest-expo/node`) cover the pure functions: money calculations, dates, the calendar grid, recurring occurrences, and text encoding for encryption.
+- **29 RLS integration tests** run against a real Supabase database, with no mocks. They create real users and check that one user cannot read or modify another household's data. They also cover writes, because in Postgres an `UPDATE` blocked by RLS does not raise an error; it simply changes zero rows.
+- **15 versioned SQL migrations** live in `supabase/migrations/`.
+- TypeScript runs in `strict` mode, with database types generated automatically (`src/lib/database.types.ts`).
 
 ```bash
-npm test          # test unitari
-npm run test:rls  # test RLS (richiede .env.test con le credenziali del progetto di test)
+npm test          # unit tests
+npm run test:rls  # RLS tests (needs a .env.test with test project credentials)
 npx tsc --noEmit  # type check
 ```
 
 ---
 
-## Avvio in locale
+## Running locally
 
-Requisiti: Node.js 20+ e un progetto Supabase.
+Requirements: Node.js 20+ and a Supabase project.
 
 ```bash
 npm install
-# .env nella root:
+# .env in the project root:
 #   EXPO_PUBLIC_SUPABASE_URL=...
 #   EXPO_PUBLIC_SUPABASE_ANON_KEY=...
-npx supabase db push   # applica le migrazioni
-npx expo start         # poi "w" per il web, oppure un development build su telefono
+npx supabase db push   # apply the migrations
+npx expo start         # then press "w" for web, or use a development build on a phone
 ```
 
-Build Android installabile (cloud, EAS):
+To build an installable Android app (in the cloud, with EAS):
 
 ```bash
 npx eas-cli build --platform android --profile preview
 ```
 
-Le variabili `EXPO_PUBLIC_*` vengono inserite nel bundle al momento della build. Vanno quindi impostate anche su EAS per ogni ambiente (`eas env:set`): EAS non legge il file `.env` locale.
+`EXPO_PUBLIC_*` variables are inlined into the bundle at build time. They must also be set on EAS for each environment (`eas env:set`), because EAS does not read the local `.env` file.
 
 ---
 
-## Documentazione
+## Documentation (in Italian)
 
-- [`docs/LEARNING.md`](docs/LEARNING.md): scelte tecniche spiegate nel dettaglio, 24 bug reali trovati e come sono stati risolti, limiti noti.
-- [`docs/superpowers/specs/`](docs/superpowers/specs/): specifiche di prodotto e design scritte prima del codice.
-- [`docs/superpowers/plans/`](docs/superpowers/plans/): piani di implementazione per blocco.
+- [`docs/LEARNING.md`](docs/LEARNING.md): technical decisions in detail, the 24 real bugs found during development and how each was fixed, and known limitations.
+- [`docs/superpowers/specs/`](docs/superpowers/specs/): product and design specs, written before any code.
+- [`docs/superpowers/plans/`](docs/superpowers/plans/): implementation plans for each block.
